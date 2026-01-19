@@ -302,7 +302,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 ## 📧 Contact
 
 For questions or support:
-- Email: itsmeshubzz07@gmail.com
+- Email: bariyashaikh90@gmail.com
 - GitHub: [@shubhamjadhav0715](https://github.com/shubhamjadhav0715)
 
 ---
@@ -316,4 +316,4 @@ For questions or support:
 
 ---
 
-**Built with ❤️ for Indian Entrepreneurs**
+**Built with campus project hub**
