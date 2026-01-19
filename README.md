@@ -303,7 +303,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 For questions or support:
 - Email: bariyashaikh90@gmail.com
-- GitHub: [@shubhamjadhav0715](https://github.com/shubhamjadhav0715)
+- GitHub:(https://github.com/Bariyashaikh)
 
 ---
 
