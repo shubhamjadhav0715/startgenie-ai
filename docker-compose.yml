@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: startgenie-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+      - ./backend/exports:/app/exports
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    networks:
+      - startgenie-network
+
+  # MongoDB Database Service (Optional - for local development)
+  mongodb:
+    image: mongo:7.0
+    container_name: startgenie-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=startgenie_db
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - startgenie-network
+
+  # Frontend Service (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: startgenie-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - startgenie-network
+
+networks:
+  startgenie-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
