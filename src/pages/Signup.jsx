@@ -1,0 +1,208 @@
+// src/pages/Signup.jsx
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+
+const Signup = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [terms, setTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!name || !email || !password || !confirm) {
+      alert("Please fill all fields.");
+      return;
+    }
+
+    if (password !== confirm) {
+      alert("Passwords do not match.");
+      return;
+    }
+
+    if (!terms) {
+      alert("Please accept the terms & conditions.");
+      return;
+    }
+
+    setLoading(true);
+
+    // Simulated signup
+    setTimeout(() => {
+      setLoading(false);
+      alert("Account created successfully 🚀");
+      navigate("/login");
+    }, 1200);
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-b from-[#0f172a] to-[#071029]">
+
+      {/* Card */}
+      <div className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/10">
+
+        {/* Heading */}
+        <h1 className="text-3xl font-bold text-white text-center mb-1">
+          StartGenie AI
+        </h1>
+        <p className="text-center text-slate-400 text-sm mb-6">
+          Create your account to start building smarter startups
+        </p>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Name */}
+          <div>
+            <label className="block text-sm text-slate-300 mb-1">
+              Full Name
+            </label>
+            <input
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-xl bg-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm text-slate-300 mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-xl bg-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm text-slate-300 mb-1">
+              Password
+            </label>
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Create password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 pr-12 rounded-xl bg-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-cyan-400 hover:text-cyan-300"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm text-slate-300 mb-1">
+              Confirm Password
+            </label>
+
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                placeholder="Re-enter password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                className="w-full px-4 py-3 pr-12 rounded-xl bg-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-cyan-400 hover:text-cyan-300"
+              >
+                {showConfirm ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+
+          {/* Terms */}
+          <div className="flex items-start text-sm">
+            <input
+              type="checkbox"
+              checked={terms}
+              onChange={(e) => setTerms(e.target.checked)}
+              className="mr-2 mt-1"
+            />
+            <label className="text-slate-300">
+              I agree to the{" "}
+              <span className="text-cyan-400 hover:underline cursor-pointer">
+                Terms & Conditions
+              </span>{" "}
+              and{" "}
+              <span className="text-cyan-400 hover:underline cursor-pointer">
+                Privacy Policy
+              </span>
+            </label>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-lg"
+          >
+            {loading ? "Creating Account..." : "Create Account"}
+          </button>
+
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-white/10"></div>
+          <span className="px-3 text-xs text-slate-400">
+            ALREADY REGISTERED?
+          </span>
+          <div className="flex-1 h-px bg-white/10"></div>
+        </div>
+
+        {/* Login */}
+        <Link
+          to="/login"
+          className="block text-center w-full border border-cyan-400 text-cyan-300 py-3 rounded-xl hover:bg-cyan-400/10 transition font-medium"
+        >
+          Sign In Instead
+        </Link>
+
+        {/* Back to Home — Bottom */}
+        <p className="text-center text-sm text-slate-400 mt-6">
+          ←{" "}
+          <Link
+            to="/"
+            className="text-cyan-400 hover:text-cyan-300 hover:underline transition"
+          >
+            Back to Homepage
+          </Link>
+        </p>
+
+      </div>
+    </div>
+  );
+};
+
+export default Signup;
