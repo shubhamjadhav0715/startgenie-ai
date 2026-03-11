@@ -1,6 +1,6 @@
-// src/pages/Signup.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { api, setSession } from "../lib/api";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -14,7 +14,7 @@ const Signup = () => {
 
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name || !email || !password || !confirm) {
@@ -28,42 +28,35 @@ const Signup = () => {
     }
 
     if (!terms) {
-      alert("Please accept the terms & conditions.");
+      alert("Please accept the terms and conditions.");
       return;
     }
 
-    setLoading(true);
-
-    // Simulated signup
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      const data = await api("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ name, email, password }),
+      });
+      setSession(data.token, data.user);
+      alert("Account created successfully.");
+      navigate("/ai-advisor");
+    } catch (error) {
+      alert(error.message);
+    } finally {
       setLoading(false);
-      alert("Account created successfully 🚀");
-      navigate("/login");
-    }, 1200);
+    }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-b from-[#0f172a] to-[#071029]">
-
-      {/* Card */}
       <div className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/10">
+        <h1 className="text-3xl font-bold text-white text-center mb-1">StartGenie AI</h1>
+        <p className="text-center text-slate-400 text-sm mb-6">Create your account to start building smarter startups</p>
 
-        {/* Heading */}
-        <h1 className="text-3xl font-bold text-white text-center mb-1">
-          StartGenie AI
-        </h1>
-        <p className="text-center text-slate-400 text-sm mb-6">
-          Create your account to start building smarter startups
-        </p>
-
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* Name */}
           <div>
-            <label className="block text-sm text-slate-300 mb-1">
-              Full Name
-            </label>
+            <label className="block text-sm text-slate-300 mb-1">Full Name</label>
             <input
               type="text"
               placeholder="John Doe"
@@ -74,11 +67,8 @@ const Signup = () => {
             />
           </div>
 
-          {/* Email */}
           <div>
-            <label className="block text-sm text-slate-300 mb-1">
-              Email Address
-            </label>
+            <label className="block text-sm text-slate-300 mb-1">Email Address</label>
             <input
               type="email"
               placeholder="you@example.com"
@@ -89,12 +79,8 @@ const Signup = () => {
             />
           </div>
 
-          {/* Password */}
           <div>
-            <label className="block text-sm text-slate-300 mb-1">
-              Password
-            </label>
-
+            <label className="block text-sm text-slate-300 mb-1">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -104,7 +90,6 @@ const Signup = () => {
                 required
                 className="w-full px-4 py-3 pr-12 rounded-xl bg-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
-
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -115,12 +100,8 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Confirm Password */}
           <div>
-            <label className="block text-sm text-slate-300 mb-1">
-              Confirm Password
-            </label>
-
+            <label className="block text-sm text-slate-300 mb-1">Confirm Password</label>
             <div className="relative">
               <input
                 type={showConfirm ? "text" : "password"}
@@ -130,7 +111,6 @@ const Signup = () => {
                 required
                 className="w-full px-4 py-3 pr-12 rounded-xl bg-white/10 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
-
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
@@ -141,7 +121,6 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Terms */}
           <div className="flex items-start text-sm">
             <input
               type="checkbox"
@@ -149,19 +128,9 @@ const Signup = () => {
               onChange={(e) => setTerms(e.target.checked)}
               className="mr-2 mt-1"
             />
-            <label className="text-slate-300">
-              I agree to the{" "}
-              <span className="text-cyan-400 hover:underline cursor-pointer">
-                Terms & Conditions
-              </span>{" "}
-              and{" "}
-              <span className="text-cyan-400 hover:underline cursor-pointer">
-                Privacy Policy
-              </span>
-            </label>
+            <label className="text-slate-300">I agree to the Terms and Conditions and Privacy Policy</label>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -169,19 +138,14 @@ const Signup = () => {
           >
             {loading ? "Creating Account..." : "Create Account"}
           </button>
-
         </form>
 
-        {/* Divider */}
         <div className="flex items-center my-6">
           <div className="flex-1 h-px bg-white/10"></div>
-          <span className="px-3 text-xs text-slate-400">
-            ALREADY REGISTERED?
-          </span>
+          <span className="px-3 text-xs text-slate-400">ALREADY REGISTERED?</span>
           <div className="flex-1 h-px bg-white/10"></div>
         </div>
 
-        {/* Login */}
         <Link
           to="/login"
           className="block text-center w-full border border-cyan-400 text-cyan-300 py-3 rounded-xl hover:bg-cyan-400/10 transition font-medium"
@@ -189,17 +153,11 @@ const Signup = () => {
           Sign In Instead
         </Link>
 
-        {/* Back to Home — Bottom */}
         <p className="text-center text-sm text-slate-400 mt-6">
-          ←{" "}
-          <Link
-            to="/"
-            className="text-cyan-400 hover:text-cyan-300 hover:underline transition"
-          >
+          <Link to="/" className="text-cyan-400 hover:text-cyan-300 hover:underline transition">
             Back to Homepage
           </Link>
         </p>
-
       </div>
     </div>
   );

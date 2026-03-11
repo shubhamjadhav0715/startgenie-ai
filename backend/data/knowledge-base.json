@@ -1,0 +1,50 @@
+[
+  {
+    "id": "legal_company_india",
+    "title": "India company setup basics",
+    "tags": ["legal", "india", "company", "startup"],
+    "content": "For Indian startups, typical structure options include Private Limited, LLP, or OPC. Basic setup often includes company incorporation, PAN/TAN, bank account, founders agreement, and accounting setup."
+  },
+  {
+    "id": "legal_compliance_tax",
+    "title": "Tax and statutory compliance",
+    "tags": ["legal", "compliance", "gst", "tax"],
+    "content": "Compliance can include GST registration (if threshold is met), professional tax (state dependent), labor law registrations where applicable, bookkeeping, TDS, and periodic filings. Founders should use a qualified CA/CS for exact obligations."
+  },
+  {
+    "id": "data_privacy_security",
+    "title": "Data privacy and security controls",
+    "tags": ["legal", "privacy", "security", "product"],
+    "content": "Customer-facing products should include privacy policy, terms of service, consent handling, basic security controls, data retention limits, and incident response guidelines. For payments or health data, stronger controls and partner compliance are required."
+  },
+  {
+    "id": "go_to_market_basics",
+    "title": "GTM for early-stage startups",
+    "tags": ["gtm", "sales", "marketing"],
+    "content": "A practical GTM plan starts with one narrow customer segment, one channel with measurable CAC, and a clear onboarding funnel. Early teams should track activation, conversion, retention, and referral metrics weekly."
+  },
+  {
+    "id": "finance_projection_framework",
+    "title": "Financial planning framework",
+    "tags": ["finance", "budget", "projection"],
+    "content": "A startup blueprint should include startup costs, monthly burn, pricing assumptions, customer growth assumptions, gross margin, and break-even month. Add best-case and worst-case scenarios to show investor readiness."
+  },
+  {
+    "id": "pitch_deck_structure",
+    "title": "Investor pitch flow",
+    "tags": ["pitch", "ppt", "investor"],
+    "content": "A strong investor deck usually covers problem, solution, market size, business model, traction, GTM, competition, financials, team, and ask. Each slide should be concise and decision-oriented."
+  },
+  {
+    "id": "operations_and_sop",
+    "title": "Operations and SOP design",
+    "tags": ["operations", "logistics", "sop"],
+    "content": "Operations planning should define daily workflows, service-level targets, key risks, owner responsibilities, escalation paths, and quality controls. This is critical for delivery, healthcare, and marketplace businesses."
+  },
+  {
+    "id": "risk_management",
+    "title": "Risk register for startups",
+    "tags": ["risk", "legal", "finance", "operations"],
+    "content": "Maintain a risk register with legal, product, financial, and operational risks. For each risk, add likelihood, impact, mitigation actions, and monitoring owner. This improves execution discipline and investor confidence."
+  }
+]

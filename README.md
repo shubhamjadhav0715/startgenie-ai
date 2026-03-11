@@ -1,16 +1,58 @@
-# React + Vite
+# StartGenie AI (Frontend + Backend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Frontend
+From `StartGenieAI_React`:
 
-Currently, two official plugins are available:
+```bash
+npm install
+npm run dev
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Frontend runs on `http://localhost:5173` (or next free port).
 
-## React Compiler
+## Backend
+From `StartGenieAI_React/backend`:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+Backend runs on `http://localhost:4000`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Environment (optional)
+Create `StartGenieAI_React/.env` to change API URL:
+
+```bash
+VITE_API_BASE_URL=http://localhost:4000/api
+```
+
+Create `StartGenieAI_React/backend/.env` for OpenAI-powered generation:
+
+```bash
+OPENAI_API_KEY=your_api_key_here
+OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_BLUEPRINT_MODEL=gpt-4.1-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+```
+
+## Implemented API
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `PUT /api/users/me`
+- `PUT /api/users/me/password`
+- `DELETE /api/users/me`
+- `GET /api/chats`
+- `POST /api/chats`
+- `PATCH /api/chats/:chatId`
+- `DELETE /api/chats/:chatId`
+- `POST /api/chats/:chatId/messages`
+- `GET /api/library`
+- `POST /api/library/upload`
+- `POST /api/blueprints/generate`
+- `POST /api/blueprints/:id/export`
+- `GET /api/health`
+
+Data is persisted in `backend/data/db.json`.
+RAG vector index is persisted in `backend/data/vector-index.json`.
