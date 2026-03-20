@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api, setSession } from "../lib/api";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -34,11 +36,43 @@ const Login = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!email) {
+      alert("Enter your email first.");
+      return;
+    }
+    try {
+      setResending(true);
+      const data = await api("/auth/request-email-verification", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      alert(data.message || "Verification email sent (if the account exists).");
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen px-4 bg-gradient-to-b from-[#0f172a] to-[#071029]">
       <div className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/10">
         <h1 className="text-3xl font-bold text-white text-center mb-1">StartGenie AI</h1>
         <p className="text-center text-slate-400 text-sm mb-6">Sign in to access your AI Startup Advisor</p>
+
+        <GoogleSignInButton
+          onDone={(data) => {
+            alert("Login successful.");
+            navigate(data.needsPasswordSetup ? "/set-password" : "/ai-advisor");
+          }}
+        />
+
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-white/10"></div>
+          <span className="px-3 text-xs text-slate-400">OR</span>
+          <div className="flex-1 h-px bg-white/10"></div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -80,6 +114,15 @@ const Login = () => {
             className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-lg"
           >
             {loading ? "Signing in..." : "Login to AI Advisor"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={resending}
+            className="w-full text-sm text-cyan-300 hover:text-cyan-200 underline underline-offset-2 disabled:opacity-60"
+          >
+            {resending ? "Sending verification email..." : "Resend verification email"}
           </button>
         </form>
 

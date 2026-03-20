@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Settings from "./Settings";
 import GenerateBlueprint from "./GenerateBlueprint";
@@ -31,7 +31,7 @@ const AIAdvisor = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const [me, chats, library] = await Promise.all([
         api("/auth/me"),
@@ -63,7 +63,7 @@ const AIAdvisor = () => {
       alert(error.message || "Session expired. Please log in again.");
       navigate("/login");
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
     if (!localStorage.getItem("token")) {
@@ -71,7 +71,7 @@ const AIAdvisor = () => {
       return;
     }
     loadInitialData();
-  }, []);
+  }, [loadInitialData, navigate]);
 
   const updateChatInHistory = (chat) => {
     setChatHistory((prev) => {
@@ -346,6 +346,9 @@ const AIAdvisor = () => {
                 </div>
               ))}
               <div ref={chatEndRef} />
+            </div>
+            <div className="pt-3 pb-1 text-xs text-slate-300">
+              For a full blueprint/pitch deck export, use the <span className="text-cyan-300 font-semibold">Generate Blueprint</span> tab.
             </div>
             <div className="flex gap-2 items-center pt-4 bg-[#0b1220]">
               <label className="cursor-pointer bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-full text-white">

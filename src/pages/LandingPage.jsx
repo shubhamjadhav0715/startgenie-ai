@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 function LandingPage() {
-
-  const [idea, setIdea] = useState('');
-  const [location, setLocation] = useState('');
-  const [category, setCategory] = useState('');
-  const [budget, setBudget] = useState('');
-  const [unit, setUnit] = useState('INR');
-  const [result, setResult] = useState(null);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -110,6 +105,15 @@ function LandingPage() {
     🚀 Create Account
   </Link>
 </div>
+
+      <div className="mt-6 slide-in flex flex-col items-center gap-3" style={{ animationDelay: "0.7s" }}>
+        <div className="text-sm text-slate-300">Or continue with</div>
+        <GoogleSignInButton
+          onDone={(data) => {
+            navigate(data.needsPasswordSetup ? "/set-password" : "/ai-advisor");
+          }}
+        />
+      </div>
 </div>
 
   </section>
@@ -524,9 +528,9 @@ function LandingPage() {
 {/* Footer */}
 <footer id="contact" className="bg-slate-900 text-white py-12">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="grid md:grid-cols-4 gap-8">
-      <div>
-        <div className="flex items-center space-x-3 mb-4">
+    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
+      <div className="max-w-xl">
+        <div className="flex items-center space-x-3 mb-3">
           <div className="w-8 h-8 chat-gradient rounded-xl flex items-center justify-center">
             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2Z"/>
@@ -537,73 +541,84 @@ function LandingPage() {
         <p className="text-slate-400">
           Transforming startup ideas into reality through intelligent conversations and AI-powered insights.
         </p>
+        <p className="text-slate-300 text-sm mt-4">
+          <span className="text-slate-400">Team:</span> Sanika, Pranjal, Bariya, Zeenat
+        </p>
       </div>
+    </div>
 
+    <div className="grid md:grid-cols-4 gap-8">
       <div>
         <h4 className="font-bold mb-4">Product</h4>
         <ul className="space-y-2 text-slate-400">
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">Chat Features</a></li>
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">Pricing</a></li>
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">API</a></li>
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">Documentation</a></li>
+          <li><Link to="/login" className="hover:text-cyan-400 transition-colors">AI Advisor / Chat</Link></li>
+          <li><Link to="/login" className="hover:text-cyan-400 transition-colors">Blueprint Generator</Link></li>
+          <li><a href="#features" className="hover:text-cyan-400 transition-colors">Features</a></li>
+          <li><a href="#pricing" className="hover:text-cyan-400 transition-colors">Pricing</a></li>
         </ul>
       </div>
 
       <div>
-        <h4 className="font-bold mb-4">Company</h4>
+        <h4 className="font-bold mb-4">Developers</h4>
         <ul className="space-y-2 text-slate-400">
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">About</a></li>
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">Blog</a></li>
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">Careers</a></li>
-          <li><a href="#" className="hover:text-cyan-400 transition-colors">Contact</a></li>
+          <li><Link to="/api" className="hover:text-cyan-400 transition-colors">API</Link></li>
+          <li><Link to="/docs" className="hover:text-cyan-400 transition-colors">Documentation</Link></li>
         </ul>
       </div>
 
       <div>
-  <h4 className="font-bold mb-4 text-center">Connect</h4>
+        <h4 className="font-bold mb-4">Platform</h4>
+        <ul className="space-y-2 text-slate-400">
+          <li><Link to="/about" className="hover:text-cyan-400 transition-colors">About</Link></li>
+          <li><Link to="/blog" className="hover:text-cyan-400 transition-colors">Blog</Link></li>
+          <li><Link to="/contact" className="hover:text-cyan-400 transition-colors">Contact</Link></li>
+        </ul>
+      </div>
 
-  {/* Social Icons 2x2 */}
-  <div className="grid grid-cols-2 gap-6 justify-items-center mb-6">
-    {/* Top Row */}
-    <a href="#" className="flex items-center gap-2 hover:text-cyan-400 transition-colors" aria-label="Gmail">
-      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 12.713l-11.995-7.713h23.99l-11.995 7.713zM12 14.925l-12-7.713v13.788h24v-13.788l-12 7.713z" />
-      </svg>
-      Gmail
-    </a>
-    <a href="#" className="flex items-center gap-2 hover:text-cyan-400 transition-colors" aria-label="GitHub">
-      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 .5a12 12 0 00-3.8 23.39c.6.11.82-.26.82-.58v-2.2c-3.34.73-4.04-1.61-4.04-1.61-.55-1.4-1.35-1.77-1.35-1.77-1.1-.75.08-.73.08-.73 1.22.09 1.86 1.25 1.86 1.25 1.08 1.86 2.83 1.32 3.52 1 .11-.78.42-1.32.76-1.63-2.67-.3-5.47-1.34-5.47-5.96 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 016 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.63-2.8 5.66-5.48 5.96.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12 12 0 0012 .5z"/>
-      </svg>
-      GitHub
-    </a>
-
-    {/* Bottom Row */}
-    <a href="#" className="flex items-center gap-2 hover:text-cyan-400 transition-colors" aria-label="LinkedIn">
-      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M4.98 3.5C4.98 4.88 3.88 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM.5 8h4v16h-4V8zm7.5 0h3.5v2.2h.05c.49-.92 1.69-1.9 3.45-1.9 3.69 0 4.37 2.42 4.37 5.57V24h-4v-8.8c0-2.1-.04-4.8-2.93-4.8-2.93 0-3.38 2.29-3.38 4.65V24h-4V8z"/>
-      </svg>
-      LinkedIn
-    </a>
-    <a href="#" className="flex items-center gap-2 hover:text-cyan-400 transition-colors" aria-label="Instagram">
-      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.06 1.9.26 2.3.44a4.6 4.6 0 011.7 1.08 4.6 4.6 0 011.08 1.7c.18.41.38 1.1.44 2.3.07 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.06 1.2-.26 1.9-.44 2.3a4.6 4.6 0 01-1.08 1.7 4.6 4.6 0 01-1.7 1.08c-.41.18-1.1.38-2.3.44-1.3.07-1.7.07-4.9.07s-3.6 0-4.9-.07c-1.2-.06-1.9-.26-2.3-.44a4.6 4.6 0 01-1.7-1.08 4.6 4.6 0 01-1.08-1.7c-.18-.41-.38-1.1-.44-2.3-.07-1.3-.07-1.7-.07-4.9s0-3.6.07-4.9c.06-1.2.26-1.9.44-2.3a4.6 4.6 0 011.08-1.7 4.6 4.6 0 011.7-1.08c.41-.18 1.1-.38 2.3-.44C8.4 2.2 8.8 2.2 12 2.2zm0-2.2C8.7 0 8.3 0 7 .07 5.7.13 4.6.32 3.7.7c-.9.38-1.7.9-2.5 1.7S.7 3.8.32 4.7c-.38.9-.57 2-.63 3.3C-.01 9.7 0 10.1 0 12s0 2.3.07 3.6c.06 1.3.25 2.4.63 3.3.38.9.9 1.7 1.7 2.5s1.6 1.3 2.5 1.7c.9.38 2 .57 3.3.63 1.3.07 1.7.07 3.6.07s2.3 0 3.6-.07c1.3-.06 2.4-.25 3.3-.63.9-.38 1.7-.9 2.5-1.7s1.3-1.6 1.7-2.5c.38-.9.57-2 .63-3.3.07-1.3.07-1.7.07-3.6s0-2.3-.07-3.6c-.06-1.3-.25-2.4-.63-3.3-.38-.9-.9-1.7-1.7-2.5s-1.6-1.3-2.5-1.7c-.9-.38-2-.57-3.3-.63C14.3 0 13.9 0 12 0z"/>
-      </svg>
-      Instagram
-    </a>
-  </div>
-
-  {/* Founder Section */}
-  <div className="mt-4 text-center">
-    <p className="text-slate-400 text-sm">Team StartGenie AI</p>
-    <p className="text-slate-200 text-sm mt-1">Sanika, Pranjal, Bariya, Zeenat</p>
-  </div>
-</div>
-
+      <div>
+        <h4 className="font-bold mb-4">Follow Us</h4>
+        <ul className="space-y-2 text-slate-400">
+          <li>
+            <a
+              href="https://github.com/Pranjal416713"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-cyan-400 transition-colors"
+            >
+              GitHub
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://www.linkedin.com/in/bariya-shaikh-3952482a9/"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-cyan-400 transition-colors"
+            >
+              LinkedIn
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://www.instagram.com/guravsanika54?utm_source=qr&igsh=MXV0NWlpcmJrbGNtZA=="
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-cyan-400 transition-colors"
+            >
+              Instagram
+            </a>
+          </li>
+          <li>
+            <a href="mailto:zeenatstudyzone@gmail.com" className="hover:text-cyan-400 transition-colors">
+              Gmail
+            </a>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-      <p>&copy; 2024 StartGenie AI. All rights reserved. Chat Your Way to Success.</p>
+      <p>&copy; 2026 StartGenie AI. All rights reserved. Chat Your Way to Success.</p>
     </div>
   </div>
 </footer>

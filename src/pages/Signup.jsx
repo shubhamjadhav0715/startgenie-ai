@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { api, setSession } from "../lib/api";
+import { api } from "../lib/api";
+import TermsModal from "../components/TermsModal";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -10,6 +12,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [terms, setTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -38,9 +41,8 @@ const Signup = () => {
         method: "POST",
         body: JSON.stringify({ name, email, password }),
       });
-      setSession(data.token, data.user);
-      alert("Account created successfully.");
-      navigate("/ai-advisor");
+      alert(data.message || "Account created. Please verify your email.");
+      navigate("/login");
     } catch (error) {
       alert(error.message);
     } finally {
@@ -53,6 +55,19 @@ const Signup = () => {
       <div className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/10">
         <h1 className="text-3xl font-bold text-white text-center mb-1">StartGenie AI</h1>
         <p className="text-center text-slate-400 text-sm mb-6">Create your account to start building smarter startups</p>
+
+        <GoogleSignInButton
+          onDone={(data) => {
+            alert("Signup successful.");
+            navigate(data.needsPasswordSetup ? "/set-password" : "/ai-advisor");
+          }}
+        />
+
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-white/10"></div>
+          <span className="px-3 text-xs text-slate-400">OR</span>
+          <div className="flex-1 h-px bg-white/10"></div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -125,10 +140,20 @@ const Signup = () => {
             <input
               type="checkbox"
               checked={terms}
-              onChange={(e) => setTerms(e.target.checked)}
+              readOnly
               className="mr-2 mt-1"
             />
-            <label className="text-slate-300">I agree to the Terms and Conditions and Privacy Policy</label>
+            <label className="text-slate-300">
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+              >
+                Terms and Conditions
+              </button>{" "}
+              and Privacy Policy
+            </label>
           </div>
 
           <button
@@ -159,6 +184,16 @@ const Signup = () => {
           </Link>
         </p>
       </div>
+
+      {showTerms && (
+        <TermsModal
+          onClose={() => setShowTerms(false)}
+          onAccept={() => {
+            setTerms(true);
+            setShowTerms(false);
+          }}
+        />
+      )}
     </div>
   );
 };

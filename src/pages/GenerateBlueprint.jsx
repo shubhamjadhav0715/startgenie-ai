@@ -16,7 +16,36 @@ function GenerateBlueprint() {
   const [statusLines, setStatusLines] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isAsking, setIsAsking] = useState(false);
   const [exportFormat, setExportFormat] = useState("");
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+
+  const qa = questions.map((q) => ({ q, a: answers[q] || "" })).filter((x) => x.a.trim());
+
+  const handleAskQuestions = async () => {
+    if (!idea.trim()) return alert("Please enter your idea or keyword.");
+    if (!location) return alert("Please select a location.");
+    if (!category) return alert("Please select a category.");
+
+    try {
+      setIsAsking(true);
+      setQuestions([]);
+      setAnswers({});
+      setStatusLines(["Generating a few clarifying questions to improve your blueprint..."]);
+      const data = await api("/blueprints/questions", {
+        method: "POST",
+        body: JSON.stringify({ idea, location, category, budget: budget || "Not specified", unit }),
+      });
+      setQuestions(data.questions || []);
+      setStatusLines((prev) => [...prev, "Answer the questions (optional), then click Generate."]);
+    } catch (error) {
+      alert(error.message);
+      setStatusLines([]);
+    } finally {
+      setIsAsking(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!idea.trim()) return alert("Please enter your idea or keyword.");
@@ -29,7 +58,7 @@ function GenerateBlueprint() {
       setStatusLines(["Analyzing and collecting startup data from vector knowledge..."]);
       const data = await api("/blueprints/generate", {
         method: "POST",
-        body: JSON.stringify({ idea, location, category, budget: budget || "Not specified", unit }),
+        body: JSON.stringify({ idea, location, category, budget: budget || "Not specified", unit, qa }),
       });
       setResult(data.blueprint);
       setStatusLines(data.progress || []);
@@ -48,29 +77,37 @@ function GenerateBlueprint() {
     try {
       setIsExporting(true);
       setStatusLines((prev) => [...prev, "Preparing export file..."]);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/blueprints/${result.id}/export`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ format: exportFormat }),
-      });
+      if (exportFormat === "email") {
+        const data = await api(`/blueprints/${result.id}/export`, {
+          method: "POST",
+          body: JSON.stringify({ format: "email" }),
+        });
+        alert(data.message || "Blueprint sent to your email.");
+      } else {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE_URL}/blueprints/${result.id}/export`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ format: exportFormat }),
+        });
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error || "Export failed");
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new Error(payload?.error || "Export failed");
+        }
+
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Startup_Blueprint.${exportFormat === "text" ? "txt" : exportFormat === "word" ? "docx" : exportFormat === "ppt" ? "pptx" : exportFormat}`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+        alert("Blueprint exported successfully. File is ready for presentation.");
       }
-
-      const blob = await response.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `Startup_Blueprint.${exportFormat === "text" ? "txt" : exportFormat === "word" ? "docx" : exportFormat === "ppt" ? "pptx" : exportFormat}`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-
-      alert("Blueprint exported successfully. File is ready for presentation.");
       setExportFormat("");
       setStatusLines((prev) => [...prev, "Export ready. Download completed."]);
     } catch (error) {
@@ -141,6 +178,14 @@ function GenerateBlueprint() {
 
         <div className="flex justify-center gap-4 mt-4 flex-wrap">
           <button
+            onClick={handleAskQuestions}
+            disabled={isAsking || isGenerating}
+            className="bg-slate-200 hover:bg-slate-100 transition text-black px-6 py-3 rounded-xl font-semibold disabled:opacity-70"
+          >
+            {isAsking ? "Asking..." : "Ask AI Questions"}
+          </button>
+
+          <button
             onClick={handleGenerate}
             disabled={isGenerating}
             className="bg-cyan-400 hover:bg-cyan-300 transition text-black px-8 py-3 rounded-xl font-semibold disabled:opacity-70"
@@ -154,6 +199,7 @@ function GenerateBlueprint() {
             <option value="pdf">PDF</option>
             <option value="word">Word</option>
             <option value="ppt">PPT</option>
+            <option value="email">Email (PDF)</option>
           </select>
 
           <button
@@ -164,14 +210,36 @@ function GenerateBlueprint() {
             {isExporting ? "Exporting..." : "Export"}
           </button>
         </div>
-        {(isGenerating || isExporting) && (
+        {(isAsking || isGenerating || isExporting) && (
           <p className="text-xs text-cyan-200 text-center mt-3">
-            {isGenerating
-              ? "Processing blueprint... analyzing, collecting vector context, and generating structure."
-              : "Processing export... preparing your selected format file."}
+            {isAsking
+              ? "Generating questions..."
+              : isGenerating
+                ? "Processing blueprint... analyzing, collecting vector context, and generating structure."
+                : "Processing export... preparing your selected format file."}
           </p>
         )}
       </div>
+
+      {questions.length > 0 && (
+        <div className="bg-white/5 mt-6 p-6 rounded-2xl border border-white/10">
+          <h3 className="text-xl font-bold text-cyan-300 mb-4">Quick Questions (Optional)</h3>
+          <div className="space-y-4">
+            {questions.map((q) => (
+              <div key={q}>
+                <p className="text-sm text-slate-200 mb-2">{q}</p>
+                <input
+                  value={answers[q] || ""}
+                  onChange={(e) => setAnswers((prev) => ({ ...prev, [q]: e.target.value }))}
+                  placeholder="Type your answer..."
+                  className="w-full p-3 rounded-xl text-black"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-300 mt-4">Tip: Better answers = better pitch deck and compliance checklist.</p>
+        </div>
+      )}
 
       {statusLines.length > 0 && (
         <div className="bg-white/5 mt-6 p-6 rounded-2xl border border-white/10">
