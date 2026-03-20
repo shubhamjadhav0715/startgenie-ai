@@ -17,6 +17,7 @@ backend/uploads
 backend/data/public-knowledge-base.json
 backend/data/rag-validation-report.json
 backend/data/vector-index.json
+backend/data/*.pdf
 
 # Editor directories and files
 .vscode/*
