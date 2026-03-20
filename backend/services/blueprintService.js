@@ -1,14 +1,7 @@
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
 import PDFDocument from "pdfkit";
 import PptxGenJS from "pptxgenjs";
 import { Document, Packer, Paragraph, HeadingLevel, TextRun } from "docx";
-import { ensureVectorIndex, queryVectorIndex } from "./vectorStoreService.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const KB_PATH = path.join(__dirname, "..", "data", "knowledge-base.json");
+import { retrieveChunks } from "./ragService.js";
 
 function stripJsonCodeFence(text) {
   const raw = String(text || "").trim();
@@ -155,19 +148,11 @@ export async function generateStructuredBlueprint({ openai, meta }) {
   const embeddingModel = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
   const blueprintModel = process.env.OPENAI_BLUEPRINT_MODEL || "gpt-4.1-mini";
 
-  const kbRaw = await fs.readFile(KB_PATH, "utf8");
-  const kb = JSON.parse(kbRaw);
   const extraContext = String(meta.extraContext || "").trim();
   const queryText = `${meta.idea} | ${meta.location} | ${meta.category} | ${meta.budget} ${meta.unit}${extraContext ? ` | ${extraContext}` : ""}`;
-  const vectorIndex = await ensureVectorIndex({
+  const ranked = await retrieveChunks({
     openai,
     embeddingModel,
-    chunks: kb,
-  });
-  const ranked = await queryVectorIndex({
-    openai,
-    embeddingModel,
-    index: vectorIndex,
     query: queryText,
     topK: 5,
   });
@@ -241,7 +226,7 @@ Rules:
 
   return {
     blueprint,
-    retrievedKnowledge: ranked.map((x) => ({ id: x.id, title: x.title, score: Number(x.score.toFixed(4)) })),
+    retrievedKnowledge: ranked.map((x) => ({ id: x.id, title: x.title, score: Number((x.score || 0).toFixed(4)) })),
   };
 }
 

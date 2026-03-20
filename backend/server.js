@@ -10,6 +10,8 @@ import multer from "multer";
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { OAuth2Client } from "google-auth-library";
+import { retrieveChunks } from "./services/ragService.js";
+import { summarizeKnowledgeBase } from "./services/publicIngestService.js";
 import {
   generateStructuredBlueprint,
   buildTextExport,
@@ -37,6 +39,8 @@ const SMTP_PASS = process.env.SMTP_PASS || "";
 const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER || "no-reply@startgenie.local";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+const RAG_CHAT_TOP_K = Number(process.env.RAG_CHAT_TOP_K || "4");
+const RAG_MIN_SCORE = Number(process.env.RAG_MIN_SCORE || "0.2");
 
 const app = express();
 app.use(cors());
@@ -237,6 +241,21 @@ async function generateAdvisorReplyWithOpenAI(chatMessages, userText) {
     return `I received your question: "${userText}". Please configure OPENAI_API_KEY to enable real AI answers.`;
   }
 
+  const embeddingModel = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
+  const rag = await retrieveChunks({
+    openai,
+    embeddingModel,
+    query: userText,
+    topK: Number.isFinite(RAG_CHAT_TOP_K) ? RAG_CHAT_TOP_K : 4,
+  });
+
+  const ragRelevant = (rag || []).filter((x) => (x.score || 0) >= (Number.isFinite(RAG_MIN_SCORE) ? RAG_MIN_SCORE : 0.2));
+  const contextBlock = ragRelevant.length
+    ? ragRelevant
+        .map((x) => `- (${x.id}) ${x.title}: ${x.content}`)
+        .join("\n")
+    : "";
+
   const recentMessages = (chatMessages || [])
     .filter((m) => m?.sender === "user" || m?.sender === "ai")
     .slice(-8)
@@ -257,17 +276,27 @@ async function generateAdvisorReplyWithOpenAI(chatMessages, userText) {
             "Goals: answer normal questions, ask smart follow-up questions, and help the user clarify their startup idea.",
             "",
             "Rules:",
+            "- Use the provided RAG context snippets when they are relevant.",
+            "- If the user asks for legal/tax/compliance advice, give general guidance and clearly recommend consulting a certified professional.",
             "- Keep replies concise and conversational (no long blueprint-style reports).",
             "- If the user asks for a detailed startup blueprint/pitch deck, DO NOT output a full blueprint. Give a short summary + tell them to use the Blueprint Generator for the full blueprint.",
-            "- Always ask 2–4 relevant clarifying questions when missing key info (target user, problem, distribution, pricing, region, constraints).",
+            "- Always ask 2-4 relevant clarifying questions when missing key info (target user, problem, distribution, pricing, region, constraints).",
             "- Prefer bullets. Avoid emojis.",
             "",
             "Output format:",
-            "1) Brief answer (3–7 bullets max)",
-            "2) Clarifying questions (2–4 bullets)",
+            "1) Brief answer (3-7 bullets max)",
+            "2) Clarifying questions (2-4 bullets)",
             "3) If relevant: Next action (1 bullet)",
           ].join("\n"),
       },
+      ...(contextBlock
+        ? [
+            {
+              role: "system",
+              content: `RAG context snippets (use only if relevant; if not relevant, ignore):\n${contextBlock}`,
+            },
+          ]
+        : []),
       ...recentMessages,
     ],
   });
@@ -345,6 +374,36 @@ async function generateBlueprintQuestionsWithOpenAI(meta) {
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "startgenie-backend" });
 });
+
+app.get("/api/rag/validation-report", auth, safe(async (_req, res) => {
+  const summary = await summarizeKnowledgeBase();
+  res.json({
+    generatedAt: new Date().toISOString(),
+    knowledgeBase: summary,
+    note: "Run backend/scripts/ingest_official_sources.js to ingest official public sources and rebuild the vector index.",
+  });
+}));
+
+app.post("/api/rag/query", auth, safe(async (req, res) => {
+  const { query, topK } = req.body;
+  if (!query?.trim()) return res.status(400).json({ error: "Query is required." });
+  if (!openai) return res.status(500).json({ error: "OPENAI_API_KEY is missing on backend server." });
+
+  const embeddingModel = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
+  const results = await retrieveChunks({
+    openai,
+    embeddingModel,
+    query: query.trim(),
+    topK: Number.isFinite(Number(topK)) ? Number(topK) : 5,
+  });
+
+  return res.json({
+    embeddingModel,
+    topK: Number.isFinite(Number(topK)) ? Number(topK) : 5,
+    minScore: Number.isFinite(RAG_MIN_SCORE) ? RAG_MIN_SCORE : 0.2,
+    results,
+  });
+}));
 
 app.post("/api/auth/signup", async (req, res) => {
   const { name, email, password } = req.body;
@@ -726,6 +785,57 @@ app.post("/api/chats/:chatId/messages", auth, safe(async (req, res) => {
   return res.status(201).json({ message: userMsg, aiMessage: aiMsg, aiImageMsg, aiGenerated, chat });
 }));
 
+app.post("/api/chats/:chatId/regenerate", auth, safe(async (req, res) => {
+  const { chatId } = req.params;
+  const db = await readDb();
+  const chat = db.chats.find((c) => c.id === chatId && c.userId === req.userId);
+  if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+  const lastUserIndex = [...(chat.messages || [])].map((m, idx) => ({ m, idx })).reverse().find((x) => x.m?.sender === "user" && x.m?.text?.trim());
+  if (!lastUserIndex) return res.status(400).json({ error: "No user message found to regenerate." });
+
+  // Only allow regenerating the most recent response (remove trailing AI messages after the last user message).
+  chat.messages = chat.messages.slice(0, lastUserIndex.idx + 1);
+
+  const lastUserText = String(chat.messages[lastUserIndex.idx].text || "").trim();
+  const aiText = await generateAdvisorReplyWithOpenAI(chat.messages, lastUserText);
+  const aiMsg = {
+    id: Date.now() + 1,
+    sender: "ai",
+    type: "text",
+    text: aiText,
+    createdAt: new Date().toISOString(),
+    regenerated: true,
+  };
+
+  chat.messages.push(aiMsg);
+  chat.updatedAt = new Date().toISOString();
+  await writeDb(db);
+
+  return res.status(201).json({ aiMessage: aiMsg, chat });
+}));
+
+app.patch("/api/chats/:chatId/messages/:messageId/feedback", auth, safe(async (req, res) => {
+  const { chatId, messageId } = req.params;
+  const { rating } = req.body;
+
+  const value = rating === "up" || rating === "down" ? rating : null;
+
+  const db = await readDb();
+  const chat = db.chats.find((c) => c.id === chatId && c.userId === req.userId);
+  if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+  const msg = (chat.messages || []).find((m) => String(m.id) === String(messageId));
+  if (!msg) return res.status(404).json({ error: "Message not found" });
+  if (msg.sender !== "ai") return res.status(400).json({ error: "Feedback is only supported for AI messages." });
+
+  msg.feedback = { rating: value, updatedAt: new Date().toISOString() };
+  chat.updatedAt = new Date().toISOString();
+  await writeDb(db);
+
+  return res.json({ message: msg });
+}));
+
 app.get("/api/library", auth, async (req, res) => {
   const db = await readDb();
   const files = db.libraryFiles
@@ -839,6 +949,23 @@ app.post("/api/blueprints/generate", auth, safe(async (req, res) => {
       id: blueprint.id,
       status: blueprint.status,
       blueprintVisualUrl: blueprintVisual?.url || "",
+      preview: {
+        title: structured.title,
+        executiveSummary: structured.executiveSummary,
+        problemStatement: structured.problemStatement,
+        solutionDesign: structured.solutionDesign,
+        targetUsers: (structured.targetUsers || []).slice(0, 6),
+        marketAnalysis: {
+          marketSize: structured.marketAnalysis?.marketSize || "",
+          competitors: (structured.marketAnalysis?.competitors || []).slice(0, 6),
+          trends: (structured.marketAnalysis?.trends || []).slice(0, 6),
+        },
+        businessModel: {
+          revenueStreams: (structured.businessModel?.revenueStreams || []).slice(0, 6),
+          pricingStrategy: structured.businessModel?.pricingStrategy || "",
+        },
+        milestones90Days: (structured.milestones90Days || []).slice(0, 8),
+      },
     },
     progress: [
       "Analyzing your startup inputs...",
