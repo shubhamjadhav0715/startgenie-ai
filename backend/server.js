@@ -375,6 +375,13 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "startgenie-backend" });
 });
 
+app.get("/api/config", (_req, res) => {
+  res.json({
+    googleClientId: GOOGLE_CLIENT_ID,
+    emailVerificationRequired: EMAIL_VERIFICATION_REQUIRED,
+  });
+});
+
 app.get("/api/rag/validation-report", auth, safe(async (_req, res) => {
   const summary = await summarizeKnowledgeBase();
   res.json({

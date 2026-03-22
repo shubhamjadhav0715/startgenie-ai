@@ -16,11 +16,18 @@ const Section = ({ id, title, children }) => (
 
 export default function ApiPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0f172a] to-[#071029] text-[#e6eef8]">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#071029] text-[#e6eef8]">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-28 -left-28 h-80 w-80 rounded-full bg-cyan-500/15 blur-3xl" />
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+      </div>
+
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b1220]/70 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-white font-bold">
-            StartGenie AI
+          <Link to="/" className="text-white font-extrabold tracking-tight">
+            <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">StartGenie</span>{" "}
+            <span className="text-slate-200">AI</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm text-slate-300">
             <Link to="/docs" className="hover:text-white">
@@ -33,7 +40,7 @@ export default function ApiPage() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-[260px,1fr] gap-8">
+      <div className="relative max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-[260px,1fr] gap-8">
         <aside className="hidden md:block">
           <div className="sticky top-24 rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-xs uppercase tracking-wide text-slate-400 mb-3">On this page</div>

@@ -66,11 +66,18 @@ const Post = ({ post }) => (
 
 export default function BlogPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0f172a] to-[#071029] text-[#e6eef8]">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-[#0f172a] to-[#071029] text-[#e6eef8]">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-28 -left-28 h-80 w-80 rounded-full bg-cyan-500/15 blur-3xl" />
+        <div className="absolute top-24 -right-24 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl" />
+        <div className="absolute bottom-0 right-1/2 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+      </div>
+
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b1220]/70 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="text-white font-bold">
-            StartGenie AI
+          <Link to="/" className="text-white font-extrabold tracking-tight">
+            <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">StartGenie</span>{" "}
+            <span className="text-slate-200">AI</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm text-slate-300">
             <Link to="/about" className="hover:text-white">
@@ -86,7 +93,7 @@ export default function BlogPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-10">
+      <main className="relative max-w-6xl mx-auto px-4 py-10">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 md:p-10">
           <p className="text-cyan-300 text-sm font-semibold">Blog</p>
           <h1 className="mt-2 text-3xl md:text-4xl font-extrabold text-white">Startup + AI Articles</h1>

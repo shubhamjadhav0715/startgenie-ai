@@ -33,7 +33,6 @@ function addParagraph(doc, text) {
 
 function addBulletList(doc, items) {
   const bulletIndent = 16;
-  const textIndent = 26;
   items.filter(Boolean).forEach((item) => {
     const y = doc.y;
     doc.circle(doc.x + 4, y + 5, 1.5).fill("#111827");

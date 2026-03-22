@@ -1,10 +1,7 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import GoogleSignInButton from "../components/GoogleSignInButton";
+import { Link } from "react-router-dom";
 
 function LandingPage() {
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -106,14 +103,7 @@ function LandingPage() {
   </Link>
 </div>
 
-      <div className="mt-6 slide-in flex flex-col items-center gap-3" style={{ animationDelay: "0.7s" }}>
-        <div className="text-sm text-slate-300">Or continue with</div>
-        <GoogleSignInButton
-          onDone={(data) => {
-            navigate(data.needsPasswordSetup ? "/set-password" : "/ai-advisor");
-          }}
-        />
-      </div>
+
 </div>
 
   </section>

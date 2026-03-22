@@ -3,6 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { api, setSession } from "../lib/api";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 
+const DEMO_EMAIL = "demo@startgenie.ai";
+const DEMO_PASSWORD = "StartGenie@123";
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -125,6 +128,30 @@ const Login = () => {
             {resending ? "Sending verification email..." : "Resend verification email"}
           </button>
         </form>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="text-sm font-semibold text-white">Demo account</div>
+          <div className="mt-1 text-xs text-slate-300">
+            Email: <span className="font-mono text-slate-200">{DEMO_EMAIL}</span>
+            <br />
+            Password: <span className="font-mono text-slate-200">{DEMO_PASSWORD}</span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail(DEMO_EMAIL);
+                setPassword(DEMO_PASSWORD);
+              }}
+              className="px-3 py-2 rounded-xl border border-white/10 text-slate-200 hover:bg-white/5 transition text-sm"
+            >
+              Use demo credentials
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] text-slate-400">
+            If login fails, run backend script: <span className="font-mono">npm run seed:demo</span>
+          </p>
+        </div>
 
         <div className="flex items-center my-6">
           <div className="flex-1 h-px bg-white/10"></div>
