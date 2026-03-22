@@ -46,18 +46,6 @@ EMAIL_VERIFICATION_REQUIRED=false
 # SMTP_PASS=your_app_password
 ```
 
-## Demo credentials
-To create a known demo user for testing:
-
-```bash
-cd StartGenieAI_React/backend
-npm run seed:demo
-```
-
-Then login with:
-- Email: `demo@startgenie.ai`
-- Password: `StartGenie@123`
-
 ## Implemented API
 - `POST /api/auth/signup`
 - `POST /api/auth/login`

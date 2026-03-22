@@ -1,34 +1,6 @@
 {
-  "users": [
-    {
-      "id": "demo_user_1",
-      "name": "Demo User",
-      "email": "demo@startgenie.ai",
-      "passwordHash": "$2b$10$cMbKJ5LiIR5jpWYR7v7dFeO84C1MZzlsv9ESMFyxs8vAmhm7LY1qm",
-      "emailVerified": true,
-      "about": "",
-      "allowAnalytics": false,
-      "avatarUrl": "",
-      "createdAt": "2026-03-22T00:00:00.000Z"
-    }
-  ],
-  "chats": [
-    {
-      "id": "demo_chat_1",
-      "userId": "demo_user_1",
-      "name": "Chat 1",
-      "messages": [
-        {
-          "id": 1,
-          "sender": "ai",
-          "text": "Hello! I'm your startup AI Advisor. Ask me anything.",
-          "createdAt": "2026-03-22T00:00:00.000Z"
-        }
-      ],
-      "createdAt": "2026-03-22T00:00:00.000Z",
-      "updatedAt": "2026-03-22T00:00:00.000Z"
-    }
-  ],
+  "users": [],
+  "chats": [],
   "libraryFiles": [],
   "blueprints": []
 }
