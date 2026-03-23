@@ -71,8 +71,8 @@ export default function ContactPage() {
             <div className="rounded-xl border border-white/10 bg-[#0b1220]/40 p-4">
               <div className="text-white font-semibold">Support email</div>
               <div className="mt-1 text-sm">
-                <a className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2" href="mailto:zeenatstudyzone@gmail.com">
-                  zeenatstudyzone@gmail.com
+                <a className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2" href="mailto:startgenieaiteam@gmail.com">
+                  startgenieaiteam@gmail.com
                 </a>
               </div>
             </div>

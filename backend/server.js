@@ -12,6 +12,7 @@ import { fileURLToPath } from "url";
 import { OAuth2Client } from "google-auth-library";
 import { retrieveChunks } from "./services/ragService.js";
 import { summarizeKnowledgeBase } from "./services/publicIngestService.js";
+import { connectMongo, User, Chat, LibraryFile, Blueprint } from "./services/mongo.js";
 import {
   generateStructuredBlueprint,
   buildTextExport,
@@ -25,7 +26,6 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || "startgenie_dev_secret_change_me";
-const DB_PATH = path.join(__dirname, "data", "db.json");
 const UPLOADS_DIR = path.join(__dirname, "uploads");
 const OPENAI_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 const OPENAI_CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || "gpt-4.1-mini";
@@ -43,9 +43,70 @@ const RAG_CHAT_TOP_K = Number(process.env.RAG_CHAT_TOP_K || "4");
 const RAG_MIN_SCORE = Number(process.env.RAG_MIN_SCORE || "0.2");
 
 const app = express();
+// Needed for correct req.ip behind Render/other proxies.
+app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 app.use("/uploads", express.static(UPLOADS_DIR));
+
+function rateLimit({ windowMs, max, keyGenerator }) {
+  const store = new Map(); // key -> { count, resetAt }
+
+  return (req, res, next) => {
+    const now = Date.now();
+    const key = String(keyGenerator?.(req) || req.ip || "anonymous");
+
+    const existing = store.get(key);
+    const resetAt = existing?.resetAt && existing.resetAt > now ? existing.resetAt : now + windowMs;
+    const count = existing?.resetAt && existing.resetAt > now ? existing.count : 0;
+
+    const nextCount = count + 1;
+    store.set(key, { count: nextCount, resetAt });
+
+    res.setHeader("X-RateLimit-Limit", String(max));
+    res.setHeader("X-RateLimit-Remaining", String(Math.max(0, max - nextCount)));
+    res.setHeader("X-RateLimit-Reset", String(Math.ceil(resetAt / 1000)));
+
+    if (nextCount > max) {
+      const retryAfterSec = Math.max(1, Math.ceil((resetAt - now) / 1000));
+      res.setHeader("Retry-After", String(retryAfterSec));
+      return res.status(429).json({
+        error: `Rate limit exceeded. Please wait ${retryAfterSec}s and try again.`,
+      });
+    }
+
+    next();
+  };
+}
+
+function userOrIpKey(req, prefix) {
+  if (req.userId) return `${prefix}:u:${req.userId}`;
+  return `${prefix}:ip:${req.ip || "unknown"}`;
+}
+
+const limitChat = rateLimit({
+  windowMs: 60_000,
+  max: Number(process.env.RATE_LIMIT_CHAT_PER_MIN || "12"),
+  keyGenerator: (req) => userOrIpKey(req, "chat"),
+});
+
+const limitImage = rateLimit({
+  windowMs: 60_000,
+  max: Number(process.env.RATE_LIMIT_IMAGE_PER_MIN || "3"),
+  keyGenerator: (req) => userOrIpKey(req, "img"),
+});
+
+const limitBlueprint = rateLimit({
+  windowMs: 60_000,
+  max: Number(process.env.RATE_LIMIT_BLUEPRINT_PER_MIN || "2"),
+  keyGenerator: (req) => userOrIpKey(req, "bp"),
+});
+
+const limitRag = rateLimit({
+  windowMs: 60_000,
+  max: Number(process.env.RATE_LIMIT_RAG_PER_MIN || "10"),
+  keyGenerator: (req) => userOrIpKey(req, "rag"),
+});
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
@@ -56,38 +117,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
-const EMPTY_DB = {
-  users: [],
-  chats: [],
-  libraryFiles: [],
-  blueprints: [],
-};
-let writeQueue = Promise.resolve();
-
-async function readDb() {
-  try {
-    const raw = await fs.readFile(DB_PATH, "utf8");
-    const parsed = JSON.parse(raw);
-    return {
-      users: parsed.users || [],
-      chats: parsed.chats || [],
-      libraryFiles: parsed.libraryFiles || [],
-      blueprints: parsed.blueprints || [],
-    };
-  } catch {
-    await writeDb(EMPTY_DB);
-    return { ...EMPTY_DB };
-  }
-}
-
-async function writeDb(db) {
-  writeQueue = writeQueue.then(async () => {
-    const tempPath = `${DB_PATH}.tmp`;
-    await fs.writeFile(tempPath, JSON.stringify(db, null, 2), "utf8");
-    await fs.rename(tempPath, DB_PATH);
-  });
-  return writeQueue;
-}
 
 function signToken(userId) {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
@@ -111,6 +140,16 @@ function sha256(input) {
   return crypto.createHash("sha256").update(String(input)).digest("hex");
 }
 
+function newId() {
+  return `${Date.now()}_${Math.floor(Math.random() * 1_000_000)}`;
+}
+
+function stripMongoId(doc) {
+  if (!doc || typeof doc !== "object") return doc;
+  const { _id, ...rest } = doc;
+  return rest;
+}
+
 function createEmailVerificationToken() {
   const token = crypto.randomBytes(32).toString("hex");
   const tokenHash = sha256(token);
@@ -125,11 +164,12 @@ async function getMailTransport() {
 
   // Lazy-load to keep dev setups working without mail deps configured.
   const nodemailer = await import("nodemailer");
+  const cleanPass = String(SMTP_PASS || "").replace(/\s+/g, "");
   mailTransport = nodemailer.default.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_SECURE,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    auth: { user: SMTP_USER, pass: cleanPass },
   });
   return mailTransport;
 }
@@ -145,13 +185,19 @@ async function sendVerificationEmail(toEmail, token) {
     return { mode: "console" };
   }
 
-  await transport.sendMail({
-    from: SMTP_FROM,
-    to: toEmail,
-    subject,
-    text,
-  });
-  return { mode: "smtp" };
+  try {
+    await transport.sendMail({
+      from: SMTP_FROM,
+      to: toEmail,
+      subject,
+      text,
+    });
+    return { mode: "smtp" };
+  } catch (err) {
+    console.error("[email] SMTP send failed, falling back to console link:", err?.message || err);
+    console.log(`[email] Verification link for ${toEmail}: ${verifyUrl}`);
+    return { mode: "console", error: "smtp_failed" };
+  }
 }
 
 async function sendBlueprintEmail({ toEmail, subject, text, pdfBuffer }) {
@@ -391,7 +437,7 @@ app.get("/api/rag/validation-report", auth, safe(async (_req, res) => {
   });
 }));
 
-app.post("/api/rag/query", auth, safe(async (req, res) => {
+app.post("/api/rag/query", auth, limitRag, safe(async (req, res) => {
   const { query, topK } = req.body;
   if (!query?.trim()) return res.status(400).json({ error: "Query is required." });
   if (!openai) return res.status(500).json({ error: "OPENAI_API_KEY is missing on backend server." });
@@ -420,16 +466,15 @@ app.post("/api/auth/signup", async (req, res) => {
   }
 
   const normalizedEmail = String(email).trim().toLowerCase();
-  const db = await readDb();
-
-  if (db.users.some((u) => u.email === normalizedEmail)) {
+  const exists = await User.exists({ email: normalizedEmail });
+  if (exists) {
     return res.status(409).json({ error: "Email is already registered." });
   }
 
   const { token, tokenHash, expiresAt } = createEmailVerificationToken();
   const emailVerified = EMAIL_VERIFICATION_REQUIRED ? false : true;
   const user = {
-    id: Date.now().toString(),
+    id: newId(),
     name: String(name).trim(),
     email: normalizedEmail,
     passwordHash: await bcrypt.hash(password, 10),
@@ -442,9 +487,9 @@ app.post("/api/auth/signup", async (req, res) => {
     createdAt: new Date().toISOString(),
   };
 
-  db.users.push(user);
-  db.chats.push({
-    id: Date.now().toString(),
+  await User.create(user);
+  await Chat.create({
+    id: newId(),
     userId: user.id,
     name: "Chat 1",
     messages: [defaultAssistantMessage()],
@@ -452,10 +497,8 @@ app.post("/api/auth/signup", async (req, res) => {
     updatedAt: new Date().toISOString(),
   });
 
-  await writeDb(db);
-
   const delivery = EMAIL_VERIFICATION_REQUIRED ? await sendVerificationEmail(user.email, token) : null;
-  return res.status(201).json({
+  return res.status(200).json({
     message:
       !EMAIL_VERIFICATION_REQUIRED
         ? "Account created. Email verification is currently disabled on the server."
@@ -473,8 +516,7 @@ app.post("/api/auth/login", async (req, res) => {
   }
 
   const normalizedEmail = String(email).trim().toLowerCase();
-  const db = await readDb();
-  const user = db.users.find((u) => u.email === normalizedEmail);
+  const user = await User.findOne({ email: normalizedEmail }).lean();
 
   if (!user) {
     return res.status(401).json({ error: "Invalid email or password." });
@@ -516,12 +558,11 @@ app.post("/api/auth/google", safe(async (req, res) => {
   const sub = String(payload?.sub || "").trim();
   const emailVerified = payload?.email_verified !== false;
 
-  const db = await readDb();
-  let user = db.users.find((u) => u.email === email);
+  let user = await User.findOne({ email });
 
   if (!user) {
-    user = {
-      id: Date.now().toString(),
+    user = await User.create({
+      id: newId(),
       name,
       email,
       passwordHash: "",
@@ -531,10 +572,9 @@ app.post("/api/auth/google", safe(async (req, res) => {
       allowAnalytics: false,
       avatarUrl: picture,
       createdAt: new Date().toISOString(),
-    };
-    db.users.push(user);
-    db.chats.push({
-      id: Date.now().toString(),
+    });
+    await Chat.create({
+      id: newId(),
       userId: user.id,
       name: "Chat 1",
       messages: [defaultAssistantMessage()],
@@ -542,13 +582,25 @@ app.post("/api/auth/google", safe(async (req, res) => {
       updatedAt: new Date().toISOString(),
     });
   } else {
-    if (!user.googleSub && sub) user.googleSub = sub;
-    if (emailVerified && user.emailVerified === false) user.emailVerified = true;
-    if (!user.avatarUrl && picture) user.avatarUrl = picture;
-    if (!user.name && name) user.name = name;
+    let changed = false;
+    if (!user.googleSub && sub) {
+      user.googleSub = sub;
+      changed = true;
+    }
+    if (emailVerified && user.emailVerified === false) {
+      user.emailVerified = true;
+      changed = true;
+    }
+    if (!user.avatarUrl && picture) {
+      user.avatarUrl = picture;
+      changed = true;
+    }
+    if (!user.name && name) {
+      user.name = name;
+      changed = true;
+    }
+    if (changed) await user.save();
   }
-
-  await writeDb(db);
 
   const token = signToken(user.id);
   return res.json({
@@ -565,14 +617,13 @@ app.post("/api/auth/request-email-verification", async (req, res) => {
     return res.status(400).json({ error: "Email is required." });
   }
 
-  const db = await readDb();
-  const user = db.users.find((u) => u.email === normalizedEmail);
+  const user = await User.findOne({ email: normalizedEmail });
 
   if (user && user.emailVerified === false) {
     const { token, tokenHash, expiresAt } = createEmailVerificationToken();
     user.emailVerificationTokenHash = tokenHash;
     user.emailVerificationExpiresAt = expiresAt;
-    await writeDb(db);
+    await user.save();
     const delivery = await sendVerificationEmail(user.email, token);
     return res.json({
       message:
@@ -590,8 +641,7 @@ app.get("/api/auth/verify-email", async (req, res) => {
   if (!token) return res.status(400).json({ error: "Missing token." });
 
   const tokenHash = sha256(token);
-  const db = await readDb();
-  const user = db.users.find((u) => u.emailVerificationTokenHash === tokenHash);
+  const user = await User.findOne({ emailVerificationTokenHash: tokenHash });
 
   if (!user) return res.status(400).json({ error: "Invalid verification token." });
 
@@ -603,28 +653,26 @@ app.get("/api/auth/verify-email", async (req, res) => {
   user.emailVerified = true;
   user.emailVerificationTokenHash = "";
   user.emailVerificationExpiresAt = "";
-  await writeDb(db);
+  await user.save();
 
   return res.json({ message: "Email verified successfully. You can now log in." });
 });
 
 app.get("/api/auth/me", auth, async (req, res) => {
-  const db = await readDb();
-  const user = db.users.find((u) => u.id === req.userId);
+  const user = await User.findOne({ id: req.userId }).lean();
   if (!user) return res.status(404).json({ error: "User not found" });
   return res.json({ user: sanitizeUser(user) });
 });
 
 app.put("/api/users/me", auth, async (req, res) => {
   const { name, email, about, allowAnalytics, avatarUrl } = req.body;
-  const db = await readDb();
-  const user = db.users.find((u) => u.id === req.userId);
+  const user = await User.findOne({ id: req.userId });
 
   if (!user) return res.status(404).json({ error: "User not found" });
 
   if (email) {
     const normalizedEmail = String(email).trim().toLowerCase();
-    const taken = db.users.some((u) => u.id !== user.id && u.email === normalizedEmail);
+    const taken = await User.exists({ email: normalizedEmail, id: { $ne: user.id } });
     if (taken) return res.status(409).json({ error: "Email is already in use." });
     user.email = normalizedEmail;
   }
@@ -634,7 +682,7 @@ app.put("/api/users/me", auth, async (req, res) => {
   if (typeof allowAnalytics === "boolean") user.allowAnalytics = allowAnalytics;
   if (typeof avatarUrl === "string") user.avatarUrl = avatarUrl;
 
-  await writeDb(db);
+  await user.save();
   return res.json({ user: sanitizeUser(user) });
 });
 
@@ -642,8 +690,7 @@ app.put("/api/users/me/password", auth, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   if (!newPassword) return res.status(400).json({ error: "New password is required." });
 
-  const db = await readDb();
-  const user = db.users.find((u) => u.id === req.userId);
+  const user = await User.findOne({ id: req.userId });
   if (!user) return res.status(404).json({ error: "User not found" });
 
   if (user.passwordHash) {
@@ -653,44 +700,39 @@ app.put("/api/users/me/password", auth, async (req, res) => {
   }
 
   user.passwordHash = await bcrypt.hash(newPassword, 10);
-  await writeDb(db);
+  await user.save();
   return res.json({ message: "Password updated successfully." });
 });
 
 app.delete("/api/users/me", auth, async (req, res) => {
-  const db = await readDb();
-  db.users = db.users.filter((u) => u.id !== req.userId);
-  db.chats = db.chats.filter((c) => c.userId !== req.userId);
-  db.libraryFiles = db.libraryFiles.filter((f) => f.userId !== req.userId);
-  db.blueprints = db.blueprints.filter((b) => b.userId !== req.userId);
-  await writeDb(db);
+  await Promise.all([
+    User.deleteOne({ id: req.userId }),
+    Chat.deleteMany({ userId: req.userId }),
+    LibraryFile.deleteMany({ userId: req.userId }),
+    Blueprint.deleteMany({ userId: req.userId }),
+  ]);
   return res.json({ message: "Account deleted." });
 });
 
 app.get("/api/chats", auth, async (req, res) => {
-  const db = await readDb();
-  const chats = db.chats
-    .filter((c) => c.userId === req.userId)
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-  return res.json({ chats });
+  const chats = await Chat.find({ userId: req.userId }).sort({ updatedAt: -1 }).lean();
+  return res.json({ chats: chats.map(stripMongoId) });
 });
 
 app.post("/api/chats", auth, async (req, res) => {
-  const db = await readDb();
-  const userChats = db.chats.filter((c) => c.userId === req.userId);
+  const userChatCount = await Chat.countDocuments({ userId: req.userId });
 
   const chat = {
-    id: Date.now().toString(),
+    id: newId(),
     userId: req.userId,
-    name: req.body.name || `Chat ${userChats.length + 1}`,
+    name: req.body.name || `Chat ${userChatCount + 1}`,
     messages: [defaultAssistantMessage()],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
-  db.chats.push(chat);
-  await writeDb(db);
-  return res.status(201).json({ chat });
+  await Chat.create(chat);
+  return res.status(200).json({ chat });
 });
 
 app.patch("/api/chats/:chatId", auth, async (req, res) => {
@@ -701,32 +743,26 @@ app.patch("/api/chats/:chatId", auth, async (req, res) => {
     return res.status(400).json({ error: "Chat name is required." });
   }
 
-  const db = await readDb();
-  const chat = db.chats.find((c) => c.id === chatId && c.userId === req.userId);
+  const chat = await Chat.findOneAndUpdate(
+    { id: chatId, userId: req.userId },
+    { $set: { name: name.trim(), updatedAt: new Date().toISOString() } },
+    { new: true }
+  ).lean();
   if (!chat) return res.status(404).json({ error: "Chat not found" });
-
-  chat.name = name.trim();
-  chat.updatedAt = new Date().toISOString();
-
-  await writeDb(db);
-  return res.json({ chat });
+  return res.json({ chat: stripMongoId(chat) });
 });
 
 app.delete("/api/chats/:chatId", auth, async (req, res) => {
   const { chatId } = req.params;
-  const db = await readDb();
-  const before = db.chats.length;
-  db.chats = db.chats.filter((c) => !(c.id === chatId && c.userId === req.userId));
-
-  if (db.chats.length === before) {
+  const result = await Chat.deleteOne({ id: chatId, userId: req.userId });
+  if (result.deletedCount === 0) {
     return res.status(404).json({ error: "Chat not found" });
   }
 
-  await writeDb(db);
   return res.json({ message: "Chat deleted" });
 });
 
-app.post("/api/chats/:chatId/messages", auth, safe(async (req, res) => {
+app.post("/api/chats/:chatId/messages", auth, limitChat, safe(async (req, res) => {
   const { chatId } = req.params;
   const { text, sender = "user", type = "text" } = req.body;
 
@@ -734,8 +770,7 @@ app.post("/api/chats/:chatId/messages", auth, safe(async (req, res) => {
     return res.status(400).json({ error: "Message text is required." });
   }
 
-  const db = await readDb();
-  const chat = db.chats.find((c) => c.id === chatId && c.userId === req.userId);
+  const chat = await Chat.findOne({ id: chatId, userId: req.userId });
   if (!chat) return res.status(404).json({ error: "Chat not found" });
 
   const userMsg = {
@@ -760,7 +795,7 @@ app.post("/api/chats/:chatId/messages", auth, safe(async (req, res) => {
 
     if (wantsVisual) {
       aiGenerated = await generateAiVisualWithOpenAI(req.userId, text.trim(), "Business");
-      db.libraryFiles.push(aiGenerated);
+      await LibraryFile.create(aiGenerated);
       aiImageMsg = {
         id: Date.now() + 2,
         sender: "ai",
@@ -787,15 +822,20 @@ app.post("/api/chats/:chatId/messages", auth, safe(async (req, res) => {
   }
 
   chat.updatedAt = new Date().toISOString();
-  await writeDb(db);
+  await chat.save();
 
-  return res.status(201).json({ message: userMsg, aiMessage: aiMsg, aiImageMsg, aiGenerated, chat });
+  return res.status(200).json({
+    message: userMsg,
+    aiMessage: aiMsg,
+    aiImageMsg,
+    aiGenerated,
+    chat: stripMongoId(chat.toObject()),
+  });
 }));
 
-app.post("/api/chats/:chatId/regenerate", auth, safe(async (req, res) => {
+app.post("/api/chats/:chatId/regenerate", auth, limitChat, safe(async (req, res) => {
   const { chatId } = req.params;
-  const db = await readDb();
-  const chat = db.chats.find((c) => c.id === chatId && c.userId === req.userId);
+  const chat = await Chat.findOne({ id: chatId, userId: req.userId });
   if (!chat) return res.status(404).json({ error: "Chat not found" });
 
   const lastUserIndex = [...(chat.messages || [])].map((m, idx) => ({ m, idx })).reverse().find((x) => x.m?.sender === "user" && x.m?.text?.trim());
@@ -817,9 +857,9 @@ app.post("/api/chats/:chatId/regenerate", auth, safe(async (req, res) => {
 
   chat.messages.push(aiMsg);
   chat.updatedAt = new Date().toISOString();
-  await writeDb(db);
+  await chat.save();
 
-  return res.status(201).json({ aiMessage: aiMsg, chat });
+  return res.status(200).json({ aiMessage: aiMsg, chat: stripMongoId(chat.toObject()) });
 }));
 
 app.patch("/api/chats/:chatId/messages/:messageId/feedback", auth, safe(async (req, res) => {
@@ -828,8 +868,7 @@ app.patch("/api/chats/:chatId/messages/:messageId/feedback", auth, safe(async (r
 
   const value = rating === "up" || rating === "down" ? rating : null;
 
-  const db = await readDb();
-  const chat = db.chats.find((c) => c.id === chatId && c.userId === req.userId);
+  const chat = await Chat.findOne({ id: chatId, userId: req.userId });
   if (!chat) return res.status(404).json({ error: "Chat not found" });
 
   const msg = (chat.messages || []).find((m) => String(m.id) === String(messageId));
@@ -838,25 +877,20 @@ app.patch("/api/chats/:chatId/messages/:messageId/feedback", auth, safe(async (r
 
   msg.feedback = { rating: value, updatedAt: new Date().toISOString() };
   chat.updatedAt = new Date().toISOString();
-  await writeDb(db);
+  await chat.save();
 
   return res.json({ message: msg });
 }));
 
 app.get("/api/library", auth, async (req, res) => {
-  const db = await readDb();
-  const files = db.libraryFiles
-    .filter((f) => f.userId === req.userId)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  return res.json({ files });
+  const files = await LibraryFile.find({ userId: req.userId }).sort({ createdAt: -1 }).lean();
+  return res.json({ files: files.map(stripMongoId) });
 });
 
-app.post("/api/library/upload", auth, upload.single("file"), safe(async (req, res) => {
+app.post("/api/library/upload", auth, limitImage, upload.single("file"), safe(async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "File is required." });
   }
-
-  const db = await readDb();
 
   const aiGeneratedVisual = await generateAiVisualWithOpenAI(
     req.userId,
@@ -864,34 +898,31 @@ app.post("/api/library/upload", auth, upload.single("file"), safe(async (req, re
     "Upload"
   );
 
-  db.libraryFiles.push(aiGeneratedVisual);
-  await writeDb(db);
+  await LibraryFile.create(aiGeneratedVisual);
 
-  return res.status(201).json({
+  return res.status(200).json({
     aiGenerated: aiGeneratedVisual,
     aiMessage: "File analyzed. AI generated diagram saved to your Library.",
   });
 }));
 
-app.post("/api/library/generate", auth, safe(async (req, res) => {
+app.post("/api/library/generate", auth, limitImage, safe(async (req, res) => {
   const { prompt } = req.body;
 
   if (!prompt?.trim()) {
     return res.status(400).json({ error: "Prompt is required to generate AI visual." });
   }
 
-  const db = await readDb();
   const aiGeneratedVisual = await generateAiVisualWithOpenAI(req.userId, prompt.trim(), "Prompt");
-  db.libraryFiles.push(aiGeneratedVisual);
-  await writeDb(db);
+  await LibraryFile.create(aiGeneratedVisual);
 
-  return res.status(201).json({
+  return res.status(200).json({
     aiGenerated: aiGeneratedVisual,
     aiMessage: "AI visual generated and saved to Library.",
   });
 }));
 
-app.post("/api/blueprints/generate", auth, safe(async (req, res) => {
+app.post("/api/blueprints/generate", auth, limitBlueprint, safe(async (req, res) => {
   const { idea, location, category, budget = "Not specified", unit = "INR", qa = [] } = req.body;
 
   if (!idea?.trim() || !location?.trim() || !category?.trim()) {
@@ -933,7 +964,7 @@ app.post("/api/blueprints/generate", auth, safe(async (req, res) => {
   }
 
   const blueprint = {
-    id: Date.now().toString(),
+    id: newId(),
     userId: req.userId,
     ...meta,
     qa: qaPairs,
@@ -944,14 +975,10 @@ app.post("/api/blueprints/generate", auth, safe(async (req, res) => {
     createdAt: new Date().toISOString(),
   };
 
-  const db = await readDb();
-  db.blueprints.push(blueprint);
-  if (blueprintVisual) {
-    db.libraryFiles.push(blueprintVisual);
-  }
-  await writeDb(db);
+  await Blueprint.create(blueprint);
+  if (blueprintVisual) await LibraryFile.create(blueprintVisual);
 
-  return res.status(201).json({
+  return res.status(200).json({
     blueprint: {
       id: blueprint.id,
       status: blueprint.status,
@@ -1006,8 +1033,7 @@ app.post("/api/blueprints/:id/export", auth, safe(async (req, res) => {
   const { id } = req.params;
   const { format = "text" } = req.body;
 
-  const db = await readDb();
-  const blueprint = db.blueprints.find((b) => b.id === id && b.userId === req.userId);
+  const blueprint = await Blueprint.findOne({ id, userId: req.userId }).lean();
   if (!blueprint) return res.status(404).json({ error: "Blueprint not found" });
   if (!blueprint.structured) {
     return res.status(400).json({ error: "Blueprint structure is unavailable. Please regenerate." });
@@ -1016,9 +1042,16 @@ app.post("/api/blueprints/:id/export", auth, safe(async (req, res) => {
   const baseName = "Startup_Blueprint";
 
   if (format === "email") {
-    const db2 = await readDb();
-    const user = db2.users.find((u) => u.id === req.userId);
+    const user = await User.findOne({ id: req.userId }).lean();
     if (!user?.email) return res.status(400).json({ error: "User email is missing." });
+
+    const transport = await getMailTransport();
+    if (!transport) {
+      return res.status(503).json({
+        error:
+          "Email is not configured on the server. Set SMTP_HOST/SMTP_USER/SMTP_PASS (for Gmail use an App Password), or export as PDF/Text instead.",
+      });
+    }
 
     const pdfBuffer = await buildPdfExport(blueprint);
     const emailText = buildTextExport(blueprint);
@@ -1076,6 +1109,14 @@ app.use((err, _req, res, _next) => {
   return res.status(500).json({ error: "Internal server error" });
 });
 
-app.listen(PORT, () => {
-  console.log(`StartGenie backend running on http://localhost:${PORT}`);
+async function start() {
+  await connectMongo();
+  app.listen(PORT, () => {
+    console.log(`StartGenie backend running on http://localhost:${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error("[startup] failed to start backend:", err?.message || err);
+  process.exit(1);
 });

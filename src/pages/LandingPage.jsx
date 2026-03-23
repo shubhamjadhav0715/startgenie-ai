@@ -599,7 +599,7 @@ function LandingPage() {
             </a>
           </li>
           <li>
-            <a href="mailto:zeenatstudyzone@gmail.com" className="hover:text-cyan-400 transition-colors">
+            <a href="mailto:startgenieaiteam@gmail.com" className="hover:text-cyan-400 transition-colors">
               Gmail
             </a>
           </li>
