@@ -169,6 +169,9 @@ async function getMailTransport() {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_SECURE,
+    connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || "10000"),
+    greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS || "10000"),
+    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || "15000"),
     auth: { user: SMTP_USER, pass: cleanPass },
   });
   return mailTransport;
@@ -198,6 +201,12 @@ async function sendVerificationEmail(toEmail, token) {
     console.log(`[email] Verification link for ${toEmail}: ${verifyUrl}`);
     return { mode: "console", error: "smtp_failed" };
   }
+}
+
+function queueVerificationEmail(toEmail, token) {
+  sendVerificationEmail(toEmail, token).catch((err) => {
+    console.error("[email] Verification email job failed:", err?.message || err);
+  });
 }
 
 async function sendBlueprintEmail({ toEmail, subject, text, pdfBuffer }) {
@@ -497,14 +506,15 @@ app.post("/api/auth/signup", async (req, res) => {
     updatedAt: new Date().toISOString(),
   });
 
-  const delivery = EMAIL_VERIFICATION_REQUIRED ? await sendVerificationEmail(user.email, token) : null;
+  if (EMAIL_VERIFICATION_REQUIRED) {
+    queueVerificationEmail(user.email, token);
+  }
+
   return res.status(200).json({
     message:
       !EMAIL_VERIFICATION_REQUIRED
         ? "Account created. Email verification is currently disabled on the server."
-        : delivery?.mode === "smtp"
-        ? "Account created. Please verify your email to continue."
-        : "Account created. Email is not configured on the server, so the verification link was printed in the backend console.",
+        : "Account created. Please verify your email to continue.",
   });
 });
 
@@ -624,13 +634,8 @@ app.post("/api/auth/request-email-verification", async (req, res) => {
     user.emailVerificationTokenHash = tokenHash;
     user.emailVerificationExpiresAt = expiresAt;
     await user.save();
-    const delivery = await sendVerificationEmail(user.email, token);
-    return res.json({
-      message:
-        delivery?.mode === "smtp"
-          ? "Verification email sent."
-          : "Email is not configured on the server, so the verification link was printed in the backend console.",
-    });
+    queueVerificationEmail(user.email, token);
+    return res.json({ message: "Verification email sent." });
   }
 
   return res.json({ message: "If the account exists, a verification email has been sent." });
