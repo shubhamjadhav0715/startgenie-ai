@@ -52,9 +52,19 @@
 
 - Internal startup knowledge base stored in:
   - `backend/data/knowledge-base.json`
-- Optional public knowledge ingestion pipeline supported through:
+- Client and public knowledge ingestion pipeline supported through:
   - `backend/services/publicIngestService.js`
-  - ingestion scripts inside `backend/scripts/`
+  - `backend/scripts/ingest_client_sources.py`
+  - `backend/data/public-knowledge-base.json`
+  - `backend/data/client-rag-sources.json`
+
+### Confirmed External Sources Indexed for RAG
+
+- Startup India, DPIIT, Invest India, MSME, and NITI Aayog official sources
+- Maharashtra Startup Policy 2025 support article
+- Razorpay startup business documents guide
+- State startup policy PDFs for Telangana, Goa, Tamil Nadu, and Maharashtra
+- Startup India Kit, MSME schemes booklet, policy landscape analysis, and summit reports
 
 ### Nature of Dataset
 
@@ -62,11 +72,14 @@
 - business model guidance
 - compliance and operational notes
 - market and product development references
+- funding schemes, subsidy information, and legal document guidance
+- roadmap, GTM, SWOT, and state-policy support notes
 
 ### Confirmation
 
 - This project does not use a traditional image or tabular ML training dataset.
 - Instead, it uses a domain-specific knowledge base for retrieval-augmented generation.
+- One West Bengal startup policy PDF was found to be image-only in the current environment and was skipped from active ingestion.
 
 ## Slide 5: Detailed ER Diagram
 
@@ -237,6 +250,9 @@ sequenceDiagram
 - manual testing of major user flows
 - module-by-module verification of responses
 - API-level validation using frontend and backend integration
+- production build verification using `vite build`
+- RAG retrieval verification after rebuilding the embedding index
+- end-to-end smoke test for blueprint questions, blueprint generation, and export
 
 ## Slide 13: Appropriate Test Cases and Results
 
@@ -252,6 +268,8 @@ sequenceDiagram
 | TC8 | Export blueprint as PDF | File generated | Pass |
 | TC9 | Update user profile | Changes stored | Pass |
 | TC10 | Delete account | User data removed | Pass |
+| TC11 | Client-source RAG retrieval | Relevant policy/funding chunks returned | Pass |
+| TC12 | Blueprint smoke test | Questions, preview, and text export completed | Pass |
 
 ## Slide 14: Representation of Results With Analysis
 

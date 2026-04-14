@@ -330,6 +330,55 @@ function GenerateBlueprint() {
                 <div className="mt-2 text-slate-200">{result.preview.businessModel?.pricingStrategy || ""}</div>
               </div>
               <div>
+                <div className="text-slate-400 text-xs uppercase tracking-wide mb-1">Funding</div>
+                <ul className="list-disc ml-5 space-y-1">
+                  {(result.preview.fundingStrategy?.fundingSources || []).slice(0, 4).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <div className="mt-2 text-slate-200">{result.preview.fundingStrategy?.capitalPlan || ""}</div>
+              </div>
+              <div>
+                <div className="text-slate-400 text-xs uppercase tracking-wide mb-1">Go To Market</div>
+                <div className="text-slate-200 leading-6">{result.preview.goToMarketStrategy?.positioning || "—"}</div>
+                <ul className="mt-2 list-disc ml-5 space-y-1">
+                  {(result.preview.goToMarketStrategy?.channels || []).slice(0, 4).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="text-slate-400 text-xs uppercase tracking-wide mb-1">SWOT Snapshot</div>
+                <ul className="list-disc ml-5 space-y-1">
+                  {(result.preview.swot?.strengths || []).slice(0, 2).map((item) => (
+                    <li key={`s-${item}`}>Strength: {item}</li>
+                  ))}
+                  {(result.preview.swot?.weaknesses || []).slice(0, 1).map((item) => (
+                    <li key={`w-${item}`}>Weakness: {item}</li>
+                  ))}
+                  {(result.preview.swot?.opportunities || []).slice(0, 1).map((item) => (
+                    <li key={`o-${item}`}>Opportunity: {item}</li>
+                  ))}
+                  {(result.preview.swot?.threats || []).slice(0, 1).map((item) => (
+                    <li key={`t-${item}`}>Threat: {item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="text-slate-400 text-xs uppercase tracking-wide mb-1">Roadmap</div>
+                <ul className="list-disc ml-5 space-y-1">
+                  {(result.preview.roadmap?.phase0to3Months || []).slice(0, 2).map((item) => (
+                    <li key={`r1-${item}`}>0-3M: {item}</li>
+                  ))}
+                  {(result.preview.roadmap?.phase3to6Months || []).slice(0, 2).map((item) => (
+                    <li key={`r2-${item}`}>3-6M: {item}</li>
+                  ))}
+                  {(result.preview.roadmap?.phase6to12Months || []).slice(0, 2).map((item) => (
+                    <li key={`r3-${item}`}>6-12M: {item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
                 <div className="text-slate-400 text-xs uppercase tracking-wide mb-1">Next 90 Days</div>
                 <ul className="list-disc ml-5 space-y-1">
                   {(result.preview.milestones90Days || []).slice(0, 6).map((m) => (

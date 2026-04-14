@@ -404,6 +404,7 @@ Important backend modules:
 - `backend/services/ragService.js` for retrieval logic
 - `backend/services/vectorStoreService.js` for embedding index handling
 - `backend/services/blueprintService.js` for blueprint and export generation
+- `backend/scripts/ingest_client_sources.py` for PDF and web-source ingestion into the RAG knowledge base
 
 ### 9.3 Core Methodology
 
@@ -462,6 +463,8 @@ The development follows a modular full-stack approach:
 | TC8 | Export blueprint as PDF | Blueprint ID | PDF file generated | Pass |
 | TC9 | Update profile | Modified name/about | User profile updated | Pass |
 | TC10 | Delete account | Authenticated request | User data removed | Pass |
+| TC11 | Client-source RAG retrieval | Policy/funding query | Relevant client-source chunks returned | Pass |
+| TC12 | Blueprint smoke test | Idea + Q&A + export request | Questions, blueprint preview, and text export completed | Pass |
 
 ## 11. GUI / Working Modules and Experimental Results
 
@@ -496,6 +499,9 @@ The development follows a modular full-stack approach:
 - Blueprint generation produces structured and reusable business planning content.
 - Export functionality increases the usability of the generated blueprint.
 - AI-generated visuals improve presentation quality and user understanding.
+- The RAG layer now includes structured client-provided PDFs and official/public web sources for policy, scheme, funding, and compliance retrieval.
+- The refreshed knowledge base contains 761 client/public chunks tagged for overview, market analysis, business model, SWOT, budget, funding, legal compliance, go-to-market, and roadmap coverage.
+- Production build verification and a live smoke test confirmed successful health check, question generation, blueprint generation, and text export.
 
 ## 12. Project Plan
 
@@ -516,6 +522,8 @@ The development follows a modular full-stack approach:
 
 The project demonstrates how AI can be integrated into a practical full-stack system for business planning support. It successfully combines modern frontend development, API design, secure authentication, database storage, retrieval-augmented generation, and export workflows. The modular design of StartGenie AI makes it easy to understand, extend, and maintain.
 
+Recent implementation work further strengthened the system by converting client-provided startup policy PDFs and official web references into a structured RAG knowledge base. This improves the factual grounding of blueprint sections such as funding strategy, legal compliance, go-to-market planning, and roadmap design. The project now supports richer India-specific and state-policy-aware blueprint generation for both PDF and PPT exports.
+
 ### 13.2 Conclusion
 
 StartGenie AI is a useful and technically relevant project that solves a meaningful real-world problem. It helps users move from an unstructured startup idea to a documented, exportable startup plan with conversational assistance and visual support. The project is academically valuable because it brings together software engineering, web development, database management, and AI integration in one complete system.
@@ -529,6 +537,7 @@ StartGenie AI is a useful and technically relevant project that solves a meaning
 - Add analytics dashboard for startup plan quality insights.
 - Integrate cloud storage for uploads and generated assets.
 - Improve scalability and production deployment readiness.
+- Add OCR support for image-only PDF sources that cannot be parsed through standard text extraction.
 
 ## 14. Bibliography in IEEE Format
 

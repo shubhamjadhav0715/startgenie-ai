@@ -29,6 +29,21 @@ async function readJsonIfExists(filePath) {
   }
 }
 
+async function createEmbeddingsInBatches({ openai, embeddingModel, inputs, batchSize = 100 }) {
+  const vectors = [];
+
+  for (let start = 0; start < inputs.length; start += batchSize) {
+    const batch = inputs.slice(start, start + batchSize);
+    const embeds = await openai.embeddings.create({
+      model: embeddingModel,
+      input: batch,
+    });
+    vectors.push(...(embeds.data || []).map((item) => item.embedding || []));
+  }
+
+  return vectors;
+}
+
 export async function ensureVectorIndex({ openai, embeddingModel, chunks }) {
   if (!openai) {
     throw new Error("OPENAI_API_KEY is missing on backend server.");
@@ -42,9 +57,12 @@ export async function ensureVectorIndex({ openai, embeddingModel, chunks }) {
     return existing;
   }
 
-  const embeds = await openai.embeddings.create({
-    model: embeddingModel,
-    input: chunks.map((x) => `${x.title}. ${x.content}. tags:${(x.tags || []).join(",")}`),
+  const embedInputs = chunks.map((x) => `${x.title}. ${x.content}. tags:${(x.tags || []).join(",")}`);
+  const embeddings = await createEmbeddingsInBatches({
+    openai,
+    embeddingModel,
+    inputs: embedInputs,
+    batchSize: 64,
   });
 
   const index = {
@@ -55,7 +73,7 @@ export async function ensureVectorIndex({ openai, embeddingModel, chunks }) {
       title: chunk.title,
       tags: chunk.tags || [],
       content: chunk.content,
-      embedding: embeds.data?.[idx]?.embedding || [],
+      embedding: embeddings[idx] || [],
     })),
   };
 

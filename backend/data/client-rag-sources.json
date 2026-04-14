@@ -1,0 +1,108 @@
+{
+  "pdfs": [
+    {
+      "name": "Innovation and Startup Policy Review",
+      "path": "C:\\Users\\itsme\\Downloads\\media_to_upload1769753869.pdf",
+      "tags": ["policy", "report", "india", "startup"]
+    },
+    {
+      "name": "Telangana Innovation Policy",
+      "path": "C:\\Users\\itsme\\Downloads\\Telangana-Innovation-Policy-Issued-GO.pdf",
+      "tags": ["policy", "state-policy", "telangana", "innovation"]
+    },
+    {
+      "name": "Goa Startup Policy 2021",
+      "path": "C:\\Users\\itsme\\Downloads\\Goa-Startup-Policy-2021.pdf",
+      "tags": ["policy", "state-policy", "goa", "startup"]
+    },
+    {
+      "name": "Tamil Nadu Startup Policy",
+      "path": "C:\\Users\\itsme\\Downloads\\Tamil_Nadu_Startup_Policy.pdf",
+      "tags": ["policy", "state-policy", "tamil-nadu", "startup"]
+    },
+    {
+      "name": "Scheme Booklet",
+      "path": "C:\\Users\\itsme\\Downloads\\Scheme-booklet-Eng.pdf",
+      "tags": ["scheme", "funding", "support", "india"]
+    },
+    {
+      "name": "MSME Schemes English",
+      "path": "C:\\Users\\itsme\\Downloads\\MSME_Schemes_English_0.pdf",
+      "tags": ["scheme", "msme", "funding", "india"]
+    },
+    {
+      "name": "Startup India International Summit 2021 Report",
+      "path": "C:\\Users\\itsme\\Downloads\\Startup India International Summit 2021 Report_vf.pdf",
+      "tags": ["report", "startup-india", "market", "india"]
+    },
+    {
+      "name": "Maharashtra Startup Entrepreneurship and Innovation Policy 2025",
+      "path": "C:\\Users\\itsme\\Downloads\\Maharashtra-Startup-Entrepreneurship-_-Innovation-Policy-2025-C5OBUYrd.pdf",
+      "tags": ["policy", "state-policy", "maharashtra", "startup"]
+    },
+    {
+      "name": "Startup Policy 2019",
+      "path": "C:\\Users\\itsme\\Downloads\\startup_policy_2019.pdf",
+      "tags": ["policy", "startup", "india"]
+    },
+    {
+      "name": "Analyzing the Policy Landscape of Indian Startup Ecosystem",
+      "path": "C:\\Users\\itsme\\Downloads\\Analyzing-the-Policy-Landscape-of-Indian-Startup-Ecosystem.pdf",
+      "tags": ["report", "policy", "ecosystem", "india"]
+    },
+    {
+      "name": "Startup India Kit",
+      "path": "C:\\Users\\itsme\\Downloads\\Startup India Kit_v5.pdf",
+      "tags": ["guide", "startup-india", "legal", "india"]
+    }
+  ],
+  "web": [
+    {
+      "name": "FinRaja Maharashtra Startup Policy 2025",
+      "url": "https://finraja.com/subsidy-maharashtra-startup-policy-2025/",
+      "mode": "page",
+      "tags": ["web", "policy", "maharashtra", "funding"]
+    },
+    {
+      "name": "Razorpay Business Documents for Startups",
+      "url": "https://razorpay.com/learn/business-documents-startups-india/",
+      "mode": "page",
+      "tags": ["web", "legal", "startup", "india"]
+    },
+    {
+      "name": "Startup India Official",
+      "url": "https://www.startupindia.gov.in",
+      "mode": "crawl",
+      "max_pages": 4,
+      "tags": ["official", "startup-india", "india", "policy"]
+    },
+    {
+      "name": "DPIIT Official",
+      "url": "https://dpiit.gov.in",
+      "mode": "crawl",
+      "max_pages": 3,
+      "tags": ["official", "dpiit", "india", "policy"]
+    },
+    {
+      "name": "Invest India Official",
+      "url": "https://www.investindia.gov.in",
+      "mode": "crawl",
+      "max_pages": 3,
+      "tags": ["official", "invest-india", "india", "market"]
+    },
+    {
+      "name": "MSME Official",
+      "url": "https://msme.gov.in",
+      "mode": "crawl",
+      "max_pages": 3,
+      "tags": ["official", "msme", "india", "scheme"]
+    },
+    {
+      "name": "NITI Aayog Official",
+      "url": "https://www.niti.gov.in",
+      "mode": "crawl",
+      "max_pages": 3,
+      "tags": ["official", "niti-aayog", "india", "policy"]
+    }
+  ]
+}

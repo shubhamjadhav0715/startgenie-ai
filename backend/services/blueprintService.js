@@ -34,6 +34,12 @@ function normalizeBlueprintJson(input, fallbackMeta) {
       pricingStrategy: parsed.businessModel?.pricingStrategy || "",
       unitEconomics: parsed.businessModel?.unitEconomics || "",
     },
+    swot: {
+      strengths: asArray(parsed.swot?.strengths),
+      weaknesses: asArray(parsed.swot?.weaknesses),
+      opportunities: asArray(parsed.swot?.opportunities),
+      threats: asArray(parsed.swot?.threats),
+    },
     operationsPlan: {
       workflow: asArray(parsed.operationsPlan?.workflow),
       teamStructure: asArray(parsed.operationsPlan?.teamStructure),
@@ -52,7 +58,24 @@ function normalizeBlueprintJson(input, fallbackMeta) {
       breakEvenEstimate: parsed.financialPlan?.breakEvenEstimate || "",
       assumptions: asArray(parsed.financialPlan?.assumptions),
     },
+    fundingStrategy: {
+      fundingSources: asArray(parsed.fundingStrategy?.fundingSources),
+      grantsAndSchemes: asArray(parsed.fundingStrategy?.grantsAndSchemes),
+      capitalPlan: parsed.fundingStrategy?.capitalPlan || "",
+      useOfFunds: parsed.fundingStrategy?.useOfFunds || "",
+    },
+    goToMarketStrategy: {
+      positioning: parsed.goToMarketStrategy?.positioning || "",
+      channels: asArray(parsed.goToMarketStrategy?.channels),
+      acquisitionPlan: parsed.goToMarketStrategy?.acquisitionPlan || "",
+      partnerships: asArray(parsed.goToMarketStrategy?.partnerships),
+    },
     risksAndMitigation: asArray(parsed.risksAndMitigation),
+    roadmap: {
+      phase0to3Months: asArray(parsed.roadmap?.phase0to3Months),
+      phase3to6Months: asArray(parsed.roadmap?.phase3to6Months),
+      phase6to12Months: asArray(parsed.roadmap?.phase6to12Months),
+    },
     milestones90Days: asArray(parsed.milestones90Days),
     investorPitchSlides: asArray(parsed.investorPitchSlides),
     sourceReferences: asArray(parsed.sourceReferences),
@@ -95,6 +118,16 @@ function sectionLines(blueprint, meta) {
     `Pricing Strategy: ${blueprint.businessModel.pricingStrategy}`,
     `Unit Economics: ${blueprint.businessModel.unitEconomics}`,
     "",
+    "SWOT",
+    "Strengths:",
+    ...blueprint.swot.strengths.map((x) => `- ${x}`),
+    "Weaknesses:",
+    ...blueprint.swot.weaknesses.map((x) => `- ${x}`),
+    "Opportunities:",
+    ...blueprint.swot.opportunities.map((x) => `- ${x}`),
+    "Threats:",
+    ...blueprint.swot.threats.map((x) => `- ${x}`),
+    "",
     "OPERATIONS PLAN",
     "Workflow:",
     ...blueprint.operationsPlan.workflow.map((x) => `- ${x}`),
@@ -120,8 +153,32 @@ function sectionLines(blueprint, meta) {
     "Assumptions:",
     ...blueprint.financialPlan.assumptions.map((x) => `- ${x}`),
     "",
+    "FUNDING STRATEGY",
+    "Funding Sources:",
+    ...blueprint.fundingStrategy.fundingSources.map((x) => `- ${x}`),
+    "Grants and Schemes:",
+    ...blueprint.fundingStrategy.grantsAndSchemes.map((x) => `- ${x}`),
+    `Capital Plan: ${blueprint.fundingStrategy.capitalPlan}`,
+    `Use of Funds: ${blueprint.fundingStrategy.useOfFunds}`,
+    "",
+    "GO TO MARKET",
+    `Positioning: ${blueprint.goToMarketStrategy.positioning}`,
+    "Channels:",
+    ...blueprint.goToMarketStrategy.channels.map((x) => `- ${x}`),
+    `Acquisition Plan: ${blueprint.goToMarketStrategy.acquisitionPlan}`,
+    "Partnerships:",
+    ...blueprint.goToMarketStrategy.partnerships.map((x) => `- ${x}`),
+    "",
     "RISKS AND MITIGATION",
     ...blueprint.risksAndMitigation.map((x) => `- ${x}`),
+    "",
+    "ROADMAP",
+    "0-3 Months:",
+    ...blueprint.roadmap.phase0to3Months.map((x) => `- ${x}`),
+    "3-6 Months:",
+    ...blueprint.roadmap.phase3to6Months.map((x) => `- ${x}`),
+    "6-12 Months:",
+    ...blueprint.roadmap.phase6to12Months.map((x) => `- ${x}`),
     "",
     "MILESTONES (NEXT 90 DAYS)",
     ...blueprint.milestones90Days.map((x) => `- ${x}`),
@@ -182,6 +239,7 @@ JSON shape:
   "targetUsers": ["..."],
   "marketAnalysis": {"marketSize":"...","competitors":["..."],"trends":["..."]},
   "businessModel": {"revenueStreams":["..."],"pricingStrategy":"...","unitEconomics":"..."},
+  "swot": {"strengths":["..."],"weaknesses":["..."],"opportunities":["..."],"threats":["..."]},
   "operationsPlan": {"workflow":["..."],"teamStructure":["..."],"toolsStack":["..."]},
   "legalAndCompliance": {
     "registrations":["..."],
@@ -196,7 +254,24 @@ JSON shape:
     "breakEvenEstimate":"...",
     "assumptions":["..."]
   },
+  "fundingStrategy": {
+    "fundingSources":["..."],
+    "grantsAndSchemes":["..."],
+    "capitalPlan":"...",
+    "useOfFunds":"..."
+  },
+  "goToMarketStrategy": {
+    "positioning":"...",
+    "channels":["..."],
+    "acquisitionPlan":"...",
+    "partnerships":["..."]
+  },
   "risksAndMitigation":["..."],
+  "roadmap": {
+    "phase0to3Months":["..."],
+    "phase3to6Months":["..."],
+    "phase6to12Months":["..."]
+  },
   "milestones90Days":["..."],
   "investorPitchSlides":["Slide title + key points"],
   "sourceReferences":["kb_chunk_id: why this chunk applies"],
@@ -208,7 +283,9 @@ JSON shape:
 Rules:
 - Make it realistic, legal-aware, and actionable.
 - Mention that legal/tax advice needs certified professionals.
-- Use only provided vector snippets for legal/compliance references; if uncertain, explicitly state verification is required.
+- Use the provided vector snippets for policy, scheme, legal, funding, and compliance references; if uncertain, explicitly state verification is required.
+- Include realistic India-specific funding, state-policy, and compliance references when the retrieved snippets support them.
+- Ensure the blueprint can support PDF and PPT exports with crisp section-ready content.
 - Investor pitch slides should be presentation-ready for a 3-4 person audience.
 `;
 
@@ -391,6 +468,12 @@ export async function buildPptxExport(blueprintRecord) {
     `Pricing: ${data.businessModel.pricingStrategy}`,
     `Unit economics: ${data.businessModel.unitEconomics}`,
   ]);
+  addSlide("SWOT", [
+    ...data.swot.strengths.map((x) => `Strength: ${x}`),
+    ...data.swot.weaknesses.map((x) => `Weakness: ${x}`),
+    ...data.swot.opportunities.map((x) => `Opportunity: ${x}`),
+    ...data.swot.threats.map((x) => `Threat: ${x}`),
+  ]);
   addSlide("Operations", [
     ...data.operationsPlan.workflow,
     ...data.operationsPlan.teamStructure,
@@ -409,7 +492,24 @@ export async function buildPptxExport(blueprintRecord) {
     `Break-even: ${data.financialPlan.breakEvenEstimate}`,
     ...data.financialPlan.assumptions,
   ]);
+  addSlide("Funding Strategy", [
+    ...data.fundingStrategy.fundingSources.map((x) => `Source: ${x}`),
+    ...data.fundingStrategy.grantsAndSchemes.map((x) => `Scheme: ${x}`),
+    `Capital plan: ${data.fundingStrategy.capitalPlan}`,
+    `Use of funds: ${data.fundingStrategy.useOfFunds}`,
+  ]);
+  addSlide("Go To Market", [
+    `Positioning: ${data.goToMarketStrategy.positioning}`,
+    ...data.goToMarketStrategy.channels.map((x) => `Channel: ${x}`),
+    `Acquisition plan: ${data.goToMarketStrategy.acquisitionPlan}`,
+    ...data.goToMarketStrategy.partnerships.map((x) => `Partnership: ${x}`),
+  ]);
   addSlide("Risks", data.risksAndMitigation);
+  addSlide("Roadmap", [
+    ...data.roadmap.phase0to3Months.map((x) => `0-3M: ${x}`),
+    ...data.roadmap.phase3to6Months.map((x) => `3-6M: ${x}`),
+    ...data.roadmap.phase6to12Months.map((x) => `6-12M: ${x}`),
+  ]);
   addSlide("Next 90 Days", data.milestones90Days);
   addSlide("Pitch Deck Outline", data.investorPitchSlides.length ? data.investorPitchSlides : [data.callToAction]);
   addSlide("Next Step", [data.callToAction], "What to do after this deck");

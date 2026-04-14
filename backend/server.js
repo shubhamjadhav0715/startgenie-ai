@@ -998,6 +998,27 @@ app.post("/api/blueprints/generate", auth, limitBlueprint, safe(async (req, res)
           revenueStreams: (structured.businessModel?.revenueStreams || []).slice(0, 6),
           pricingStrategy: structured.businessModel?.pricingStrategy || "",
         },
+        swot: {
+          strengths: (structured.swot?.strengths || []).slice(0, 4),
+          weaknesses: (structured.swot?.weaknesses || []).slice(0, 4),
+          opportunities: (structured.swot?.opportunities || []).slice(0, 4),
+          threats: (structured.swot?.threats || []).slice(0, 4),
+        },
+        fundingStrategy: {
+          fundingSources: (structured.fundingStrategy?.fundingSources || []).slice(0, 5),
+          grantsAndSchemes: (structured.fundingStrategy?.grantsAndSchemes || []).slice(0, 5),
+          capitalPlan: structured.fundingStrategy?.capitalPlan || "",
+        },
+        goToMarketStrategy: {
+          positioning: structured.goToMarketStrategy?.positioning || "",
+          channels: (structured.goToMarketStrategy?.channels || []).slice(0, 5),
+          acquisitionPlan: structured.goToMarketStrategy?.acquisitionPlan || "",
+        },
+        roadmap: {
+          phase0to3Months: (structured.roadmap?.phase0to3Months || []).slice(0, 4),
+          phase3to6Months: (structured.roadmap?.phase3to6Months || []).slice(0, 4),
+          phase6to12Months: (structured.roadmap?.phase6to12Months || []).slice(0, 4),
+        },
         milestones90Days: (structured.milestones90Days || []).slice(0, 8),
       },
     },

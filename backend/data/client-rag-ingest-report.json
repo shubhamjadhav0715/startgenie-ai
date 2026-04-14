@@ -1,0 +1,256 @@
+{
+  "generatedAt": "2026-04-14T12:39:38.096925+00:00",
+  "manifestPath": "D:\\CAMPUS-PROJECT-HUB\\FrontendProject_REACT\\StartGenieAI_React\\backend\\data\\client-rag-sources.json",
+  "outputPath": "D:\\CAMPUS-PROJECT-HUB\\FrontendProject_REACT\\StartGenieAI_React\\backend\\data\\public-knowledge-base.json",
+  "totalEntries": 761,
+  "sources": [
+    {
+      "name": "Analyzing the Policy Landscape of Indian Startup Ecosystem",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 42
+    },
+    {
+      "name": "DPIIT Official",
+      "kind": "crawl",
+      "documentsProcessed": 0,
+      "chunksCreated": 0
+    },
+    {
+      "name": "FinRaja Maharashtra Startup Policy 2025",
+      "kind": "page",
+      "documentsProcessed": 1,
+      "chunksCreated": 6
+    },
+    {
+      "name": "Goa Startup Policy 2021",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 23
+    },
+    {
+      "name": "Innovation and Startup Policy Review",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 38
+    },
+    {
+      "name": "Invest India Official",
+      "kind": "crawl",
+      "documentsProcessed": 1,
+      "chunksCreated": 22
+    },
+    {
+      "name": "Maharashtra Startup Entrepreneurship and Innovation Policy 2025",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 25
+    },
+    {
+      "name": "MSME Official",
+      "kind": "crawl",
+      "documentsProcessed": 3,
+      "chunksCreated": 3
+    },
+    {
+      "name": "MSME Schemes English",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 212
+    },
+    {
+      "name": "NITI Aayog Official",
+      "kind": "crawl",
+      "documentsProcessed": 3,
+      "chunksCreated": 12
+    },
+    {
+      "name": "Razorpay Business Documents for Startups",
+      "kind": "page",
+      "documentsProcessed": 1,
+      "chunksCreated": 16
+    },
+    {
+      "name": "Scheme Booklet",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 66
+    },
+    {
+      "name": "Startup India International Summit 2021 Report",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 80
+    },
+    {
+      "name": "Startup India Kit",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 17
+    },
+    {
+      "name": "Startup India Official",
+      "kind": "crawl",
+      "documentsProcessed": 5,
+      "chunksCreated": 68
+    },
+    {
+      "name": "Startup Policy 2019",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 25
+    },
+    {
+      "name": "Tamil Nadu Startup Policy",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 45
+    },
+    {
+      "name": "Telangana Innovation Policy",
+      "kind": "pdf",
+      "documentsProcessed": 1,
+      "chunksCreated": 61
+    }
+  ],
+  "sectionCoverage": {
+    "budget": 193,
+    "business_model": 56,
+    "funding": 453,
+    "go_to_market": 206,
+    "legal_compliance": 467,
+    "market_analysis": 395,
+    "overview": 333,
+    "roadmap": 89,
+    "swot": 234
+  },
+  "topTags": [
+    [
+      "client-source",
+      761
+    ],
+    [
+      "funding",
+      754
+    ],
+    [
+      "legal",
+      704
+    ],
+    [
+      "market",
+      701
+    ],
+    [
+      "policy",
+      676
+    ],
+    [
+      "scheme",
+      672
+    ],
+    [
+      "pdf",
+      634
+    ],
+    [
+      "india",
+      601
+    ],
+    [
+      "section:legal_compliance",
+      467
+    ],
+    [
+      "section:funding",
+      453
+    ],
+    [
+      "state:goa",
+      404
+    ],
+    [
+      "section:market_analysis",
+      395
+    ],
+    [
+      "report",
+      390
+    ],
+    [
+      "section:overview",
+      333
+    ],
+    [
+      "section:swot",
+      234
+    ],
+    [
+      "msme",
+      215
+    ],
+    [
+      "section:go_to_market",
+      206
+    ],
+    [
+      "section:budget",
+      193
+    ],
+    [
+      "startup",
+      172
+    ],
+    [
+      "startup-india",
+      165
+    ],
+    [
+      "state-policy",
+      154
+    ],
+    [
+      "web",
+      127
+    ],
+    [
+      "official",
+      105
+    ],
+    [
+      "state:telangana",
+      103
+    ],
+    [
+      "section:roadmap",
+      89
+    ]
+  ],
+  "sourceChunkCounts": {
+    "Analyzing the Policy Landscape of Indian Startup Ecosystem": 42,
+    "FinRaja Maharashtra Startup Policy 2025": 6,
+    "Goa Startup Policy 2021": 23,
+    "Innovation and Startup Policy Review": 38,
+    "Invest India Official": 22,
+    "MSME Official": 2,
+    "MSME Official - https://msme.gov.in/disclaimer": 1,
+    "MSME Schemes English": 212,
+    "Maharashtra Startup Entrepreneurship and Innovation Policy 2025": 25,
+    "NITI Aayog Official": 1,
+    "NITI Aayog Official - https://www.niti.gov.in/divisions/division/agriculture-policy": 3,
+    "NITI Aayog Official - https://www.niti.gov.in/divisions/division/public-finance-and-policy-analysis": 8,
+    "Razorpay Business Documents for Startups": 16,
+    "Scheme Booklet": 66,
+    "Startup India International Summit 2021 Report": 80,
+    "Startup India Kit": 17,
+    "Startup India Official": 12,
+    "Startup India Official - https://www.startupindia.gov.in/content/sih/en/funding.html": 21,
+    "Startup India Official - https://www.startupindia.gov.in/content/sih/en/government-schemes.html": 2,
+    "Startup India Official - https://www.startupindia.gov.in/content/sih/en/public_procurement.html": 24,
+    "Startup India Official - https://www.startupindia.gov.in/content/sih/en/startup-scheme.html": 9,
+    "Startup Policy 2019": 25,
+    "Tamil Nadu Startup Policy": 45,
+    "Telangana Innovation Policy": 61
+  },
+  "errors": []
+}
